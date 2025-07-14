@@ -13,7 +13,6 @@ Router.post(`${AppConfig.publicPath}/users/register`, async ctx => {
 	const [err1, res1] = await AsyncTo(UserModel.findOne({ username: params.username }));
 	if (err1) {
 		ctx.body = { code: 400, msg: "新增用户失败" };
-		console.log('1')
 		return false;
 	}
 	if (res1) {

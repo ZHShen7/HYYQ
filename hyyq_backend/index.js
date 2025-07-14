@@ -4,6 +4,7 @@ import KoaJson from "koa-json";
 import KoaLogger from "koa-logger";
 import KoaOnerror from "koa-onerror";
 import Router from "./src/routes/index.js";
+import "./src/database/index.js";
 
 // 创建实例
 const app = new Koa();

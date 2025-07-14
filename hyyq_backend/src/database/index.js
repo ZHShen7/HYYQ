@@ -5,7 +5,7 @@ import AppConfig from "../app.config";
 const { connect, connection } = Mongoose;
 const { mongodb: { host, password, port, username } } = AppConfig;
 
-connect(`mongodb://${username}:${password}@${host}:${port}/copd`, {
+connect(`mongodb://${username}:${password}@${host}:${port}/hyyq`, {
 	authSource: "admin",
 	useNewUrlParser: true,
 	useUnifiedTopology: true
