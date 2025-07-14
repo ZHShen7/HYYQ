@@ -1,0 +1,35 @@
+{
+  "name": "awl_backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "cross-env NODE_ENV=prod node --es-module-specifier-resolution=node index.js",
+		"start": "cross-env NODE_ENV=dev nodemon --es-module-specifier-resolution=node index.js"
+  },
+  "type": "module",
+  "dependencies": {
+    "cross-env": "^7.0.3",
+    "dayjs": "^1.11.13",
+    "koa": "^3.0.0",
+    "koa-body": "^6.0.1",
+    "koa-json": "^2.0.2",
+    "koa-logger": "^4.0.0",
+    "koa-onerror": "^4.2.0",
+    "koa-router": "^10.1.1",
+    "mongoose": "^8.16.2",
+    "nodemon": "^3.1.10"
+  },
+  "nodemonConfig": {
+		"execMap": {
+			"js": "node --harmony"
+		},
+		"ext": "js json",
+		"ignore": [
+			"dist/"
+		],
+		"watch": [
+			"src/"
+		]
+	}
+}
