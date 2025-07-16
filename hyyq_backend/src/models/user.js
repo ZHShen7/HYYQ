@@ -20,6 +20,9 @@ export default {
 		required: true,
 		type: String
 	},
+	rememberMe: {
+		type: Boolean
+	},
 	type:{
 		match:/0-2/,
 		required: true,

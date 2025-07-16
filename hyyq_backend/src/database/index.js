@@ -1,6 +1,6 @@
 import Mongoose from "mongoose";
 
-import AppConfig from "../app.config";
+import AppConfig from "../app.config.js";
 
 const { connect, connection } = Mongoose;
 const { mongodb: { host, password, port, username } } = AppConfig;

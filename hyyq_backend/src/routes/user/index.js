@@ -7,9 +7,9 @@ import AppConfig from "../../app.config.js";
 
 const Router = KoaRouter();
 
-Router.post(`${AppConfig.publicPath}/users/register`, async ctx => {
+Router.post(`${AppConfig.publicPath}/user/register`, async ctx => {
 	const params = ctx.request.body;
-	// 判断产品是否存在
+	// 判断用户是否存在
 	const [err1, res1] = await AsyncTo(UserModel.findOne({ username: params.username }));
 	if (err1) {
 		ctx.body = { code: 400, msg: "新增用户失败" };
@@ -19,7 +19,7 @@ Router.post(`${AppConfig.publicPath}/users/register`, async ctx => {
 		ctx.body = { code: 400, msg: "当前用户已存在" };
 		return false;
 	}
-	// 新增产品
+	// 新增用户
 	const [err2, res2] = await AsyncTo(UserModel.create(params));
 	if (!err2 && res2) {
 		ctx.body = { code: 200, data: res2, msg: "新增用户成功" };
@@ -28,6 +28,7 @@ Router.post(`${AppConfig.publicPath}/users/register`, async ctx => {
 		console.log(err2)
 	}
 });
+
 
 Router.post(`${AppConfig.publicPath}/users/login`, async ctx => {
 	const params = ctx.request.body;
