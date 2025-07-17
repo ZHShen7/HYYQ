@@ -13,6 +13,7 @@
         placeholder="请输入用户名、手机号或邮箱"
         :error-message="errors.username"
         @blur="validateField('username')"
+        @input="(value) => console.log('Parent received:', value)"
       />
 
       <FormInput
@@ -22,15 +23,17 @@
         placeholder="请输入密码"
         :error-message="errors.password"
         @blur="validateField('password')"
+        @input="(value) => console.log('Parent received:', value)"
       />
 
       <view class="form-options">
         <view class="remember-me">
-          <checkbox
-            :checked="formData.rememberMe"
-            @change="formData.rememberMe = !formData.rememberMe"
-            color="#007aff"
-          />
+          <checkbox-group @change="formData.rememberMe = !formData.rememberMe">
+            <checkbox
+              :checked="formData.rememberMe"
+              color="#007aff"
+            />
+          </checkbox-group>
           <text>记住我</text>
         </view>
         <text class="forgot-password" @click="goToForgotPassword">忘记密码？</text>
@@ -65,7 +68,8 @@
   </view>
 </template>
 
-<script>
+<script setup>
+import { ref, reactive, onMounted } from 'vue'
 import FormInput from '@/components/FormInput.vue'
 import SubmitButton from '@/components/SubmitButton.vue'
 import WechatLoginButton from '@/components/WechatLoginButton.vue'
@@ -76,171 +80,172 @@ import { wechatLogin as wechatLoginUtil } from '@/utils/wechat.js'
 import { supportWechatLogin, isWechatMiniProgram } from '@/utils/platform.js'
 import { handleAsyncWithLoading } from '@/utils/async.js'
 
-export default {
-  name: 'Login',
-  components: {
-    FormInput,
-    SubmitButton,
-    WechatLoginButton
-  },
-  data() {
-    return {
-      loading: false,
-      wechatLoading: false,
-      showWechatLogin: false,
-      formData: {
-        username: '',
-        password: '',
-        rememberMe: false
-      },
-      errors: {
-        username: '',
-        password: ''
+// 响应式数据
+const loading = ref(false)
+const wechatLoading = ref(false)
+const showWechatLogin = ref(false)
+
+const formData = reactive({
+  username: '',
+  password: '',
+  rememberMe: false
+})
+
+const errors = reactive({
+  username: '',
+  password: ''
+})
+
+// 验证单个字段
+const validateField = (field) => {
+  console.log(formData)
+  errors[field] = ''
+  
+  switch (field) {
+    case 'username':
+      if (!formData.username) {
+        errors.username = '请输入用户名、手机号或邮箱'
+      } else if (!isValidUsername(formData.username)) {
+        errors.username = '请输入正确的用户名、手机号或邮箱格式'
+      } else {
+        errors.username = ''
       }
-    }
-  },
-  methods: {
-    // 验证单个字段
-    validateField(field) {
-      this.errors[field] = ''
-      
-      switch (field) {
-        case 'username':
-          if (!this.formData.username) {
-            this.errors.username = '请输入用户名、手机号或邮箱'
-          } else if (!this.isValidUsername(this.formData.username)) {
-            this.errors.username = '请输入正确的用户名、手机号或邮箱格式'
-          }
-          break
-        case 'password':
-          if (!this.formData.password) {
-            this.errors.password = '请输入密码'
-          } else if (!validatePassword(this.formData.password)) {
-            this.errors.password = '密码至少8位，包含字母和数字'
-          }
-          break
+      break
+    case 'password':
+      if (!formData.password) {
+        errors.password = '请输入密码'
+      } else if (!validatePassword(formData.password)) {
+        errors.password = '密码至少8位，包含字母和数字'
+      } else {
+        errors.password = ''
       }
-    },
-
-    // 验证用户名格式（支持用户名、手机号、邮箱）
-    isValidUsername(value) {
-      return validateUsername(value) || validatePhone(value) || validateEmail(value)
-    },
-
-    // 验证整个表单
-    validateForm() {
-      this.validateField('username')
-      this.validateField('password')
-      
-      return !this.errors.username && !this.errors.password
-    },
-
-    // 处理登录
-    async handleLogin() {
-      if (!this.validateForm()) {
-        uni.showToast({
-          title: '请检查输入信息',
-          icon: 'none'
-        })
-        return
-      }
-
-      const [response, error] = await handleAsyncWithLoading(
-        login({
-          username: this.formData.username,
-          password: this.formData.password,
-          rememberMe: this.formData.rememberMe
-        }),
-        {
-          loading: this,
-          loadingText: '登录中...',
-          successMsg: '登录成功',
-          errorMsg: '登录失败，请重试',
-          onSuccess: (data) => {
-            // 保存token和用户信息
-            setToken(data.token)
-            setUserInfo(data.userInfo)
-            
-            // 跳转到首页
-            setTimeout(() => {
-              goToHome()
-            }, 1500)
-          }
-        }
-      )
-    },
-
-    // 跳转到注册页
-    goToRegister() {
-      uni.navigateTo({
-        url: '/pages/register/register'
-      })
-    },
-
-    // 跳转到忘记密码页
-    goToForgotPassword() {
-      uni.navigateTo({
-        url: '/pages/forgot-password/forgot-password'
-      })
-    },
-
-    // 检查微信登录支持
-    checkWechatLoginSupport() {
-      this.showWechatLogin = supportWechatLogin()
-    },
-
-    // 处理微信登录
-    async handleWechatLogin() {
-      const [wechatResult, wechatError] = await handleAsyncWithLoading(
-        wechatLoginUtil(),
-        {
-          loading: this,
-          loadingText: '微信登录中...',
-          errorMsg: '微信登录失败，请重试',
-          onError: (error) => {
-            // 如果是权限问题，提示用户授权
-            if (error.message && error.message.includes('授权')) {
-              uni.showModal({
-                title: '需要授权',
-                content: '请授权获取您的微信信息以完成登录',
-                showCancel: false
-              })
-            }
-          }
-        }
-      )
-
-      if (wechatError) return
-
-      const [response, loginError] = await handleAsyncWithLoading(
-        wechatLogin({
-          code: wechatResult.code,
-          userInfo: wechatResult.userInfo,
-          platform: isWechatMiniProgram() ? 'mp-weixin' : 'app-plus'
-        }),
-        {
-          loading: this,
-          loadingText: '登录中...',
-          successMsg: '微信登录成功',
-          errorMsg: '微信登录失败，请重试',
-          onSuccess: (data) => {
-            // 保存token和用户信息
-            setToken(data.token)
-            setUserInfo(data.userInfo)
-            
-            // 跳转到首页
-            setTimeout(() => {
-              goToHome()
-            }, 1500)
-          }
-        }
-      )
-    }
-  },
-  mounted() {
-    this.checkWechatLoginSupport()
+      break
   }
 }
+
+// 验证用户名格式（支持用户名、手机号、邮箱）
+const isValidUsername = (value) => {
+  return validateUsername(value) || validatePhone(value) || validateEmail(value)
+}
+
+// 验证整个表单
+const validateForm = () => {
+  validateField('username')
+  validateField('password')
+  
+  return !errors.username && !errors.password
+}
+
+// 处理登录
+const handleLogin = async () => {
+  if (!validateForm()) {
+    uni.showToast({
+      title: '请检查输入信息',
+      icon: 'none'
+    })
+    return
+  }
+
+  const [response, error] = await handleAsyncWithLoading(
+    login({
+      username: formData.username,
+      password: formData.password,
+      rememberMe: formData.rememberMe
+    }),
+    {
+      loading: { loading },
+      loadingText: '登录中...',
+      successMsg: '登录成功',
+      errorMsg: '登录失败，请重试',
+      onSuccess: (data) => {
+        // 保存token和用户信息
+        setToken(data.token)
+        setUserInfo(data.userInfo)
+        
+        // 跳转到首页
+        setTimeout(() => {
+          uni.reLaunch({
+            url: '/pages/index/index'
+          })
+        }, 1500)
+      }
+    }
+  )
+}
+
+// 跳转到注册页
+const goToRegister = () => {
+  uni.navigateTo({
+    url: '/pages/register/register'
+  })
+}
+
+// 跳转到忘记密码页
+const goToForgotPassword = () => {
+  uni.navigateTo({
+    url: '/pages/forgot-password/forgot-password'
+  })
+}
+
+// 检查微信登录支持
+const checkWechatLoginSupport = () => {
+  showWechatLogin.value = supportWechatLogin()
+}
+
+// 处理微信登录
+const handleWechatLogin = async () => {
+  const [wechatResult, wechatError] = await handleAsyncWithLoading(
+    wechatLoginUtil(),
+    {
+      loading: { wechatLoading },
+      loadingText: '微信登录中...',
+      errorMsg: '微信登录失败，请重试',
+      onError: (error) => {
+        // 如果是权限问题，提示用户授权
+        if (error.message && error.message.includes('授权')) {
+          uni.showModal({
+            title: '需要授权',
+            content: '请授权获取您的微信信息以完成登录',
+            showCancel: false
+          })
+        }
+      }
+    }
+  )
+
+  if (wechatError) return
+
+  const [response, loginError] = await handleAsyncWithLoading(
+    wechatLogin({
+      code: wechatResult.code,
+      userInfo: wechatResult.userInfo,
+      platform: isWechatMiniProgram() ? 'mp-weixin' : 'app-plus'
+    }),
+    {
+      loading: { wechatLoading },
+      loadingText: '登录中...',
+      successMsg: '微信登录成功',
+      errorMsg: '微信登录失败，请重试',
+      onSuccess: (data) => {
+        // 保存token和用户信息
+        setToken(data.token)
+        setUserInfo(data.userInfo)
+        
+        // 跳转到首页
+        setTimeout(() => {
+          uni.reLaunch({
+            url: '/pages/index/index'
+          })
+        }, 1500)
+      }
+    }
+  )
+}
+
+// 生命周期
+onMounted(() => {
+  checkWechatLoginSupport()
+})
 </script>
 
 <style scoped>

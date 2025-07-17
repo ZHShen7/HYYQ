@@ -17,67 +17,67 @@
   </view>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { supportWechatLogin, isWechatMiniProgram } from '@/utils/platform.js'
 
-export default {
-  name: 'WechatLoginButton',
-  props: {
-    text: {
-      type: String,
-      default: '微信一键登录'
-    },
-    loadingText: {
-      type: String,
-      default: '登录中...'
-    },
-    loading: {
-      type: Boolean,
-      default: false
-    },
-    disabled: {
-      type: Boolean,
-      default: false
-    },
-    size: {
-      type: String,
-      default: 'normal', // small, normal, large
-      validator: (value) => ['small', 'normal', 'large'].includes(value)
-    }
+// Props 定义
+const props = defineProps({
+  text: {
+    type: String,
+    default: '微信一键登录'
   },
-  data() {
-    return {
-      showWechatLogin: false
-    }
+  loadingText: {
+    type: String,
+    default: '登录中...'
   },
-  computed: {
-    buttonClass() {
-      return [
-        `btn-${this.size}`,
-        {
-          'btn-loading': this.loading,
-          'btn-disabled': this.disabled
-        }
-      ]
-    }
+  loading: {
+    type: Boolean,
+    default: false
   },
-  mounted() {
-    this.checkWechatLoginSupport()
+  disabled: {
+    type: Boolean,
+    default: false
   },
-  methods: {
-    // 检查是否支持微信登录
-    checkWechatLoginSupport() {
-      this.showWechatLogin = supportWechatLogin()
-    },
+  size: {
+    type: String,
+    default: 'normal', // small, normal, large
+    validator: (value) => ['small', 'normal', 'large'].includes(value)
+  }
+})
 
-    // 处理微信登录
-    handleWechatLogin() {
-      if (!this.loading && !this.disabled) {
-        this.$emit('click')
-      }
+// Emits 定义
+const emit = defineEmits(['click'])
+
+// 响应式数据
+const showWechatLogin = ref(false)
+
+// 计算属性
+const buttonClass = computed(() => {
+  return [
+    `btn-${props.size}`,
+    {
+      'btn-loading': props.loading,
+      'btn-disabled': props.disabled
     }
+  ]
+})
+
+// 方法
+const checkWechatLoginSupport = () => {
+  showWechatLogin.value = supportWechatLogin()
+}
+
+const handleWechatLogin = () => {
+  if (!props.loading && !props.disabled) {
+    emit('click')
   }
 }
+
+// 生命周期
+onMounted(() => {
+  checkWechatLoginSupport()
+})
 </script>
 
 <style scoped>
