@@ -1,7 +1,7 @@
 // 请求封装模块
 
 // API接口配置
-const BASE_URL = 'YOUR_BASE_URL_HERE' // 请替换为你的后端接口地址
+const BASE_URL = 'http://127.0.0.1' // 请替换为你的后端接口地址
 
 // 请求封装
 const request = (url, options = {}) => {

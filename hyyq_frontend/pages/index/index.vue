@@ -6,7 +6,7 @@
         <text class="app-name">约约球球</text>
       </view>
       
-      <view v-if="isLoggedIn" class="user-info">
+      <view v-if="isLoggedInComputed" class="user-info">
         <image class="avatar" :src="userInfo.avatar || '/static/default-avatar.png'" mode="aspectFill"></image>
         <view class="user-details">
           <text class="username">{{ userInfo.username || '用户' }}</text>
@@ -16,12 +16,12 @@
       
       <view v-else class="login-prompt">
         <text class="prompt-text">请先登录</text>
-        <button class="login-btn" @click="goToLogin">立即登录</button>
+        <button class="login-btn" @click="goToLoginPage">立即登录</button>
       </view>
     </view>
 
     <view class="content">
-      <view v-if="isLoggedIn" class="logged-in-content">
+      <view v-if="isLoggedInComputed" class="logged-in-content">
         <view class="feature-card">
           <text class="card-title">用户信息</text>
           <view class="info-item">
@@ -72,7 +72,7 @@
         </view>
 
         <view class="action-buttons">
-          <button class="action-btn primary" @click="goToLogin">
+          <button class="action-btn primary" @click="goToLoginPage">
             立即登录
           </button>
           <button class="action-btn secondary" @click="goToRegister">
@@ -94,172 +94,184 @@
   </view>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { isLoggedIn, getUserInfo, clearAuth, goToLogin } from '@/utils/auth.js'
 import { getUserInfo as fetchUserInfo, logout, wechatLogin } from '@/api/user.js'
 import { wechatLogin as wechatLoginUtil } from '@/utils/wechat.js'
 import { supportWechatLogin, isWechatMiniProgram } from '@/utils/platform.js'
 import { handleAsyncWithLoading, handleAsync } from '@/utils/async.js'
 
-export default {
-  name: 'Index',
-  data() {
-    return {
-      userInfo: {},
-      showWechatLogin: false
-    }
-  },
-  computed: {
-    isLoggedIn() {
-      return isLoggedIn()
-    }
-  },
-  onLoad() {
-    this.checkLoginStatus()
-    this.checkWechatLoginSupport()
-  },
-  onShow() {
-    this.checkLoginStatus()
-    this.checkWechatLoginSupport()
-  },
-  methods: {
-    // 检查登录状态
-    checkLoginStatus() {
-      if (this.isLoggedIn) {
-        this.userInfo = getUserInfo() || {}
-        this.loadUserInfo()
-      }
-    },
+// 响应式数据
+const userInfo = ref({})
+const showWechatLogin = ref(false)
+const loginStatus = ref(false)
 
-    // 加载用户信息
-    async loadUserInfo() {
-      const [response, error] = await handleAsync(
-        fetchUserInfo(),
-        {
-          showToast: false,
-          onError: (error) => {
-            // 如果获取用户信息失败，可能是token过期，清除登录状态
-            if (error.statusCode === 401) {
-              this.handleLogout()
-            }
-          }
-        }
-      )
-      
-      if (response) {
-        this.userInfo = response.data || {}
-      }
-    },
+// 计算属性
+const isLoggedInComputed = computed(() => {
+  return loginStatus.value
+})
 
-    // 刷新用户信息
-    async refreshUserInfo() {
-      const [success, error] = await handleAsyncWithLoading(
-        this.loadUserInfo(),
-        {
-          loading: this,
-          loadingText: '刷新中...',
-          successMsg: '刷新成功',
-          errorMsg: '刷新失败'
-        }
-      )
-    },
-
-    // 处理退出登录
-    async handleLogout() {
-      uni.showModal({
-        title: '确认退出',
-        content: '确定要退出登录吗？',
-        success: async (res) => {
-          if (res.confirm) {
-            const [data, error] = await handleAsync(
-              logout(),
-              {
-                showToast: false,
-                onError: (error) => {
-                  console.error('退出登录失败:', error)
-                }
-              }
-            )
-            
-            // 无论接口是否成功，都清除本地数据
-            clearAuth()
-            this.userInfo = {}
-            uni.showToast({
-              title: '已退出登录',
-              icon: 'success'
-            })
-          }
-        }
-      })
-    },
-
-    // 跳转到登录页
-    goToLogin() {
-      goToLogin()
-    },
-
-    // 跳转到注册页
-    goToRegister() {
-      uni.navigateTo({
-        url: '/pages/register/register'
-      })
-    },
-
-    // 格式化日期
-    formatDate(dateString) {
-      if (!dateString) return '未知'
-      const date = new Date(dateString)
-      return date.toLocaleDateString('zh-CN')
-    },
-
-    // 检查微信登录支持
-    checkWechatLoginSupport() {
-      this.showWechatLogin = supportWechatLogin()
-    },
-
-    // 处理微信登录
-    async handleWechatLogin() {
-      const [wechatResult, wechatError] = await handleAsync(
-        wechatLoginUtil(),
-        {
-          showToast: false,
-          onError: (error) => {
-            // 如果是权限问题，提示用户授权
-            if (error.message && error.message.includes('授权')) {
-              uni.showModal({
-                title: '需要授权',
-                content: '请授权获取您的微信信息以完成登录',
-                showCancel: false
-              })
-            }
-          }
-        }
-      )
-
-      if (wechatError) return
-
-      const [response, loginError] = await handleAsync(
-        wechatLogin({
-          code: wechatResult.code,
-          userInfo: wechatResult.userInfo,
-          platform: isWechatMiniProgram() ? 'mp-weixin' : 'app-plus'
-        }),
-        {
-          successMsg: '微信登录成功',
-          errorMsg: '微信登录失败，请重试',
-          onSuccess: (data) => {
-            // 保存token和用户信息
-            setToken(data.token)
-            setUserInfo(data.userInfo)
-            
-            // 刷新页面状态
-            this.checkLoginStatus()
-          }
-        }
-      )
-    }
+// 检查登录状态
+const checkLoginStatus = () => {
+  const loggedIn = isLoggedIn()
+  loginStatus.value = loggedIn
+  if (loggedIn) {
+    userInfo.value = getUserInfo() || {}
+    loadUserInfo()
   }
 }
+
+// 加载用户信息
+const loadUserInfo = async () => {
+  const [response, error] = await handleAsync(
+    fetchUserInfo(),
+    {
+      showToast: false,
+      onError: (error) => {
+        // 如果获取用户信息失败，可能是token过期，清除登录状态
+        if (error.statusCode === 401) {
+          handleLogout()
+        }
+      }
+    }
+  )
+  
+  if (response) {
+    userInfo.value = response.data || {}
+  }
+}
+
+// 刷新用户信息
+const refreshUserInfo = async () => {
+  const [success, error] = await handleAsyncWithLoading(
+    loadUserInfo(),
+    {
+      loading: { loading: ref(false) },
+      loadingText: '刷新中...',
+      successMsg: '刷新成功',
+      errorMsg: '刷新失败'
+    }
+  )
+}
+
+// 处理退出登录
+const handleLogout = async () => {
+  uni.showModal({
+    title: '确认退出',
+    content: '确定要退出登录吗？',
+    success: async (res) => {
+      if (res.confirm) {
+        const [data, error] = await handleAsync(
+          logout(),
+          {
+            showToast: false,
+            onError: (error) => {
+              console.error('退出登录失败:', error)
+            }
+          }
+        )
+        
+        // 无论接口是否成功，都清除本地数据
+        clearAuth()
+        userInfo.value = {}
+        loginStatus.value = false
+        uni.showToast({
+          title: '已退出登录',
+          icon: 'success'
+        })
+      }
+    }
+  })
+}
+
+// 跳转到登录页
+const goToLoginPage = () => {
+  uni.navigateTo({
+    url: '/pages/login/login'
+  })
+}
+
+// 跳转到注册页
+const goToRegister = () => {
+  uni.navigateTo({
+    url: '/pages/register/register'
+  })
+}
+
+// 格式化日期
+const formatDate = (dateString) => {
+  if (!dateString) return '未知'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('zh-CN')
+}
+
+// 检查微信登录支持
+const checkWechatLoginSupport = () => {
+  showWechatLogin.value = supportWechatLogin()
+}
+
+// 处理微信登录
+const handleWechatLogin = async () => {
+  const [wechatResult, wechatError] = await handleAsync(
+    wechatLoginUtil(),
+    {
+      showToast: false,
+      onError: (error) => {
+        // 如果是权限问题，提示用户授权
+        if (error.message && error.message.includes('授权')) {
+          uni.showModal({
+            title: '需要授权',
+            content: '请授权获取您的微信信息以完成登录',
+            showCancel: false
+          })
+        }
+      }
+    }
+  )
+
+  if (wechatError) return
+
+  const [response, loginError] = await handleAsync(
+    wechatLogin({
+      code: wechatResult.code,
+      userInfo: wechatResult.userInfo,
+      platform: isWechatMiniProgram() ? 'mp-weixin' : 'app-plus'
+    }),
+    {
+      successMsg: '微信登录成功',
+      errorMsg: '微信登录失败，请重试',
+      onSuccess: (data) => {
+        // 保存token和用户信息
+        userInfo.value = data.userInfo || {}
+        loginStatus.value = true
+        // 跳转到首页
+        setTimeout(() => {
+          uni.reLaunch({
+            url: '/pages/index/index'
+          })
+        }, 1500)
+      }
+    }
+  )
+}
+
+// 生命周期
+onMounted(() => {
+  checkLoginStatus()
+  checkWechatLoginSupport()
+})
+
+onLoad(() => {
+  checkLoginStatus()
+  checkWechatLoginSupport()
+})
+
+onShow(() => {
+  checkLoginStatus()
+  checkWechatLoginSupport()
+})
 </script>
 
 <style scoped>

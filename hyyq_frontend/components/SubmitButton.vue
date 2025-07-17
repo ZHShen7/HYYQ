@@ -13,55 +13,58 @@
   </view>
 </template>
 
-<script>
-export default {
-  name: 'SubmitButton',
-  props: {
-    text: {
-      type: String,
-      default: '提交'
-    },
-    loadingText: {
-      type: String,
-      default: '提交中...'
-    },
-    loading: {
-      type: Boolean,
-      default: false
-    },
-    disabled: {
-      type: Boolean,
-      default: false
-    },
-    type: {
-      type: String,
-      default: 'primary', // primary, secondary, danger
-      validator: (value) => ['primary', 'secondary', 'danger'].includes(value)
-    },
-    size: {
-      type: String,
-      default: 'normal', // small, normal, large
-      validator: (value) => ['small', 'normal', 'large'].includes(value)
-    }
+<script setup>
+import { computed } from 'vue'
+
+// Props 定义
+const props = defineProps({
+  text: {
+    type: String,
+    default: '提交'
   },
-  computed: {
-    buttonClass() {
-      return [
-        `button-${this.type}`,
-        `button-${this.size}`,
-        {
-          'button-loading': this.loading,
-          'button-disabled': this.disabled
-        }
-      ]
-    }
+  loadingText: {
+    type: String,
+    default: '提交中...'
   },
-  methods: {
-    handleClick() {
-      if (!this.loading && !this.disabled) {
-        this.$emit('click')
-      }
+  loading: {
+    type: Boolean,
+    default: false
+  },
+  disabled: {
+    type: Boolean,
+    default: false
+  },
+  type: {
+    type: String,
+    default: 'primary', // primary, secondary, danger
+    validator: (value) => ['primary', 'secondary', 'danger'].includes(value)
+  },
+  size: {
+    type: String,
+    default: 'normal', // small, normal, large
+    validator: (value) => ['small', 'normal', 'large'].includes(value)
+  }
+})
+
+// Emits 定义
+const emit = defineEmits(['click'])
+
+// 计算属性
+const buttonClass = computed(() => {
+  return [
+    `button-${props.type}`,
+    `button-${props.size}`,
+    {
+      'button-loading': props.loading,
+      'button-disabled': props.disabled
     }
+  ]
+})
+
+// 方法
+const handleClick = () => {
+  if (!props.loading && !props.disabled) {
+    emit('click')
   }
 }
 </script>

@@ -59,17 +59,18 @@
       />
 
       <view class="agreement">
-        <checkbox
-          :checked="formData.agreeTerms"
-          @change="formData.agreeTerms = !formData.agreeTerms"
-          color="#007aff"
-        />
-        <text class="agreement-text">
-          我已阅读并同意
-          <text class="link">《用户协议》</text>
-          和
-          <text class="link">《隐私政策》</text>
-        </text>
+        <checkbox-group @change="formData.agreeTerms = !formData.agreeTerms">
+          <checkbox
+            :checked="formData.agreeTerms"
+            color="#007aff"
+          />
+          <text class="agreement-text">
+            我已阅读并同意
+            <text class="link">《用户协议》</text>
+            和
+            <text class="link">《隐私政策》</text>
+          </text>
+        </checkbox-group>
       </view>
 
       <SubmitButton
@@ -88,184 +89,180 @@
   </view>
 </template>
 
-<script>
+<script setup>
+import { ref, reactive } from 'vue'
 import FormInput from '@/components/FormInput.vue'
 import SubmitButton from '@/components/SubmitButton.vue'
-import { register, sendVerifyCode } from '@/api/user.js'
+import { register, sendVerifyCode as sendVerifyCodeApi } from '@/api/user.js'
 import { validateUsername, validatePassword, validatePhone, validateCode } from '@/utils/validator.js'
 import { handleAsyncWithLoading } from '@/utils/async.js'
 
-export default {
-  name: 'Register',
-  components: {
-    FormInput,
-    SubmitButton
-  },
-  data() {
-    return {
-      loading: false,
-      codeCountdown: 0,
-      formData: {
-        username: '',
-        phone: '',
-        verifyCode: '',
-        password: '',
-        confirmPassword: '',
-        agreeTerms: false
-      },
-      errors: {
-        username: '',
-        phone: '',
-        verifyCode: '',
-        password: '',
-        confirmPassword: ''
+// 响应式数据
+const loading = ref(false)
+const codeCountdown = ref(0)
+
+const formData = reactive({
+  username: '',
+  phone: '',
+  verifyCode: '',
+  password: '',
+  confirmPassword: '',
+  agreeTerms: false
+})
+
+const errors = reactive({
+  username: '',
+  phone: '',
+  verifyCode: '',
+  password: '',
+  confirmPassword: ''
+})
+
+// 验证单个字段
+const validateField = (field) => {
+  errors[field] = ''
+  
+  switch (field) {
+    case 'username':
+      if (!formData.username) {
+        errors.username = '请输入用户名'
+      } else if (!validateUsername(formData.username)) {
+        errors.username = '用户名格式不正确，3-20位字母、数字或下划线'
       }
-    }
-  },
-  methods: {
-    // 验证单个字段
-    validateField(field) {
-      this.errors[field] = ''
-      
-      switch (field) {
-        case 'username':
-          if (!this.formData.username) {
-            this.errors.username = '请输入用户名'
-          } else if (!validateUsername(this.formData.username)) {
-            this.errors.username = '用户名格式不正确，3-20位字母、数字或下划线'
-          }
-          break
-        case 'phone':
-          if (!this.formData.phone) {
-            this.errors.phone = '请输入手机号'
-          } else if (!validatePhone(this.formData.phone)) {
-            this.errors.phone = '请输入正确的手机号格式'
-          }
-          break
-        case 'verifyCode':
-          if (!this.formData.verifyCode) {
-            this.errors.verifyCode = '请输入验证码'
-          } else if (!validateCode(this.formData.verifyCode)) {
-            this.errors.verifyCode = '验证码格式不正确'
-          }
-          break
-        case 'password':
-          if (!this.formData.password) {
-            this.errors.password = '请输入密码'
-          } else if (!validatePassword(this.formData.password)) {
-            this.errors.password = '密码至少8位，包含字母和数字'
-          }
-          break
-        case 'confirmPassword':
-          if (!this.formData.confirmPassword) {
-            this.errors.confirmPassword = '请确认密码'
-          } else if (this.formData.password !== this.formData.confirmPassword) {
-            this.errors.confirmPassword = '两次输入的密码不一致'
-          }
-          break
+      break
+    case 'phone':
+      if (!formData.phone) {
+        errors.phone = '请输入手机号'
+      } else if (!validatePhone(formData.phone)) {
+        errors.phone = '请输入正确的手机号格式'
       }
-    },
-
-    // 验证整个表单
-    validateForm() {
-      this.validateField('username')
-      this.validateField('phone')
-      this.validateField('verifyCode')
-      this.validateField('password')
-      this.validateField('confirmPassword')
-      
-      return !Object.values(this.errors).some(error => error)
-    },
-
-    // 发送验证码
-    async sendVerifyCode() {
-      if (!this.formData.phone) {
-        uni.showToast({
-          title: '请先输入手机号',
-          icon: 'none'
-        })
-        return
+      break
+    case 'verifyCode':
+      if (!formData.verifyCode) {
+        errors.verifyCode = '请输入验证码'
+      } else if (!validateCode(formData.verifyCode)) {
+        errors.verifyCode = '验证码格式不正确'
       }
-
-      if (this.errors.phone) {
-        uni.showToast({
-          title: '请检查手机号格式',
-          icon: 'none'
-        })
-        return
+      break
+    case 'password':
+      if (!formData.password) {
+        errors.password = '请输入密码'
+      } else if (!validatePassword(formData.password)) {
+        errors.password = '密码至少8位，包含字母和数字'
       }
-
-      const [data, error] = await handleAsyncWithLoading(
-        sendVerifyCode({ phone: this.formData.phone }),
-        {
-          loading: this,
-          loadingText: '发送中...',
-          successMsg: '验证码已发送',
-          errorMsg: '发送失败，请重试',
-          onSuccess: () => {
-            // 开始倒计时
-            this.codeCountdown = 60
-            this.startCountdown()
-          }
-        }
-      )
-    },
-
-    // 倒计时
-    startCountdown() {
-      if (this.codeCountdown > 0) {
-        setTimeout(() => {
-          this.codeCountdown--
-          this.startCountdown()
-        }, 1000)
+      break
+    case 'confirmPassword':
+      if (!formData.confirmPassword) {
+        errors.confirmPassword = '请确认密码'
+      } else if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = '两次输入的密码不一致'
       }
-    },
-
-    // 处理注册
-    async handleRegister() {
-      if (!this.formData.agreeTerms) {
-        uni.showToast({
-          title: '请先同意用户协议和隐私政策',
-          icon: 'none'
-        })
-        return
-      }
-
-      if (!this.validateForm()) {
-        uni.showToast({
-          title: '请检查输入信息',
-          icon: 'none'
-        })
-        return
-      }
-
-      const [response, error] = await handleAsyncWithLoading(
-        register({
-          username: this.formData.username,
-          phone: this.formData.phone,
-          verifyCode: this.formData.verifyCode,
-          password: this.formData.password
-        }),
-        {
-          loading: this,
-          loadingText: '注册中...',
-          successMsg: '注册成功',
-          errorMsg: '注册失败，请重试',
-          onSuccess: () => {
-            // 跳转到登录页
-            setTimeout(() => {
-              uni.navigateBack()
-            }, 1500)
-          }
-        }
-      )
-    },
-
-    // 跳转到登录页
-    goToLogin() {
-      uni.navigateBack()
-    }
+      break
   }
+}
+
+// 验证整个表单
+const validateForm = () => {
+  validateField('username')
+  validateField('phone')
+  validateField('verifyCode')
+  validateField('password')
+  validateField('confirmPassword')
+  
+  return !Object.values(errors).some(error => error)
+}
+
+// 发送验证码
+const sendVerifyCode = async () => {
+  if (!formData.phone) {
+    uni.showToast({
+      title: '请先输入手机号',
+      icon: 'none'
+    })
+    return
+  }
+
+  if (errors.phone) {
+    uni.showToast({
+      title: '请检查手机号格式',
+      icon: 'none'
+    })
+    return
+  }
+
+  const [data, error] = await handleAsyncWithLoading(
+    sendVerifyCodeApi({ phone: formData.phone }),
+    {
+      loading: { loading },
+      loadingText: '发送中...',
+      successMsg: '验证码已发送',
+      errorMsg: '发送失败，请重试',
+      onSuccess: () => {
+        // 开始倒计时
+        codeCountdown.value = 60
+        startCountdown()
+      }
+    }
+  )
+}
+
+// 倒计时
+const startCountdown = () => {
+  if (codeCountdown.value > 0) {
+    setTimeout(() => {
+      codeCountdown.value--
+      startCountdown()
+    }, 1000)
+  }
+}
+
+// 处理注册
+const handleRegister = async () => {
+  if (!formData.agreeTerms) {
+    uni.showToast({
+      title: '请先同意用户协议和隐私政策',
+      icon: 'none'
+    })
+    return
+  }
+
+  if (!validateForm()) {
+    uni.showToast({
+      title: '请检查输入信息',
+      icon: 'none'
+    })
+    return
+  }
+
+  const [response, error] = await handleAsyncWithLoading(
+    register({
+      username: formData.username,
+      phone: formData.phone,
+      verifyCode: formData.verifyCode,
+      password: formData.password
+    }),
+    {
+      loading: { loading },
+      loadingText: '注册中...',
+      successMsg: '注册成功',
+      errorMsg: '注册失败，请重试',
+      onSuccess: () => {
+        // 跳转到登录页
+        setTimeout(() => {
+          uni.navigateTo({
+            url: '/pages/login/login'
+          })
+        }, 1500)
+      }
+    }
+  )
+}
+
+// 跳转到登录页
+const goToLogin = () => {
+  uni.navigateTo({
+    url: '/pages/login/login'
+  })
 }
 </script>
 

@@ -64,164 +64,156 @@
   </view>
 </template>
 
-<script>
+<script setup>
+import { ref, reactive } from 'vue'
 import FormInput from '@/components/FormInput.vue'
 import SubmitButton from '@/components/SubmitButton.vue'
-import { sendVerifyCode, resetPassword } from '@/api/user'
+import { sendVerifyCode as sendVerifyCodeApi, resetPassword } from '@/api/user'
 import { validatePassword, validatePhone, validateCode } from '@/utils/validator.js'
 import { handleAsyncWithLoading } from '@/utils/async.js'
 
-export default {
-  name: 'ForgotPassword',
-  components: {
-    FormInput,
-    SubmitButton
-  },
-  data() {
-    return {
-      loading: false,
-      codeCountdown: 0,
-      formData: {
-        phone: '',
-        verifyCode: '',
-        newPassword: '',
-        confirmPassword: ''
-      },
-      errors: {
-        phone: '',
-        verifyCode: '',
-        newPassword: '',
-        confirmPassword: ''
+// 响应式数据
+const loading = ref(false)
+const codeCountdown = ref(0)
+
+const formData = reactive({
+  phone: '',
+  verifyCode: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+const errors = reactive({
+  phone: '',
+  verifyCode: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+// 验证单个字段
+const validateField = (field) => {
+  errors[field] = ''
+  
+  switch (field) {
+    case 'phone':
+      if (!formData.phone) {
+        errors.phone = '请输入手机号'
+      } else if (!validatePhone(formData.phone)) {
+        errors.phone = '请输入正确的手机号格式'
       }
-    }
-  },
-  methods: {
-    // 验证单个字段
-    validateField(field) {
-      this.errors[field] = ''
-      
-      switch (field) {
-        case 'phone':
-          if (!this.formData.phone) {
-            this.errors.phone = '请输入手机号'
-          } else if (!validatePhone(this.formData.phone)) {
-            this.errors.phone = '请输入正确的手机号格式'
-          }
-          break
-        case 'verifyCode':
-          if (!this.formData.verifyCode) {
-            this.errors.verifyCode = '请输入验证码'
-          } else if (!validateCode(this.formData.verifyCode)) {
-            this.errors.verifyCode = '验证码格式不正确'
-          }
-          break
-        case 'newPassword':
-          if (!this.formData.newPassword) {
-            this.errors.newPassword = '请输入新密码'
-          } else if (!validatePassword(this.formData.newPassword)) {
-            this.errors.newPassword = '密码至少8位，包含字母和数字'
-          }
-          break
-        case 'confirmPassword':
-          if (!this.formData.confirmPassword) {
-            this.errors.confirmPassword = '请确认新密码'
-          } else if (this.formData.newPassword !== this.formData.confirmPassword) {
-            this.errors.confirmPassword = '两次输入的密码不一致'
-          }
-          break
+      break
+    case 'verifyCode':
+      if (!formData.verifyCode) {
+        errors.verifyCode = '请输入验证码'
+      } else if (!validateCode(formData.verifyCode)) {
+        errors.verifyCode = '验证码格式不正确'
       }
-    },
-
-    // 验证整个表单
-    validateForm() {
-      this.validateField('phone')
-      this.validateField('verifyCode')
-      this.validateField('newPassword')
-      this.validateField('confirmPassword')
-      
-      return !Object.values(this.errors).some(error => error)
-    },
-
-    // 发送验证码
-    async sendVerifyCode() {
-      if (!this.formData.phone) {
-        uni.showToast({
-          title: '请先输入手机号',
-          icon: 'none'
-        })
-        return
+      break
+    case 'newPassword':
+      if (!formData.newPassword) {
+        errors.newPassword = '请输入新密码'
+      } else if (!validatePassword(formData.newPassword)) {
+        errors.newPassword = '密码至少8位，包含字母和数字'
       }
-
-      if (this.errors.phone) {
-        uni.showToast({
-          title: '请检查手机号格式',
-          icon: 'none'
-        })
-        return
+      break
+    case 'confirmPassword':
+      if (!formData.confirmPassword) {
+        errors.confirmPassword = '请确认新密码'
+      } else if (formData.newPassword !== formData.confirmPassword) {
+        errors.confirmPassword = '两次输入的密码不一致'
       }
-
-      const [data, error] = await handleAsyncWithLoading(
-        sendVerifyCode({ phone: this.formData.phone }),
-        {
-          loading: this,
-          loadingText: '发送中...',
-          successMsg: '验证码已发送',
-          errorMsg: '发送失败，请重试',
-          onSuccess: () => {
-            // 开始倒计时
-            this.codeCountdown = 60
-            this.startCountdown()
-          }
-        }
-      )
-    },
-
-    // 倒计时
-    startCountdown() {
-      if (this.codeCountdown > 0) {
-        setTimeout(() => {
-          this.codeCountdown--
-          this.startCountdown()
-        }, 1000)
-      }
-    },
-
-    // 处理重置密码
-    async handleResetPassword() {
-      if (!this.validateForm()) {
-        uni.showToast({
-          title: '请检查输入信息',
-          icon: 'none'
-        })
-        return
-      }
-
-      const [response, error] = await handleAsyncWithLoading(
-        resetPassword({
-          phone: this.formData.phone,
-          verifyCode: this.formData.verifyCode,
-          newPassword: this.formData.newPassword
-        }),
-        {
-          loading: this,
-          loadingText: '重置中...',
-          successMsg: '密码重置成功',
-          errorMsg: '重置失败，请重试',
-          onSuccess: () => {
-            // 跳转到登录页
-            setTimeout(() => {
-              uni.navigateBack()
-            }, 1500)
-          }
-        }
-      )
-    },
-
-    // 返回登录页
-    goToLogin() {
-      uni.navigateBack()
-    }
+      break
   }
+}
+
+// 验证整个表单
+const validateForm = () => {
+  validateField('phone')
+  validateField('verifyCode')
+  validateField('newPassword')
+  validateField('confirmPassword')
+  
+  return !Object.values(errors).some(error => error)
+}
+
+// 发送验证码
+const sendVerifyCode = async () => {
+  if (!formData.phone) {
+    uni.showToast({
+      title: '请先输入手机号',
+      icon: 'none'
+    })
+    return
+  }
+
+  if (errors.phone) {
+    uni.showToast({
+      title: '请检查手机号格式',
+      icon: 'none'
+    })
+    return
+  }
+
+  const [data, error] = await handleAsyncWithLoading(
+    sendVerifyCodeApi({ phone: formData.phone }),
+    {
+      loading: { loading },
+      loadingText: '发送中...',
+      successMsg: '验证码已发送',
+      errorMsg: '发送失败，请重试',
+      onSuccess: () => {
+        // 开始倒计时
+        codeCountdown.value = 60
+        startCountdown()
+      }
+    }
+  )
+}
+
+// 倒计时
+const startCountdown = () => {
+  if (codeCountdown.value > 0) {
+    setTimeout(() => {
+      codeCountdown.value--
+      startCountdown()
+    }, 1000)
+  }
+}
+
+// 处理重置密码
+const handleResetPassword = async () => {
+  if (!validateForm()) {
+    uni.showToast({
+      title: '请检查输入信息',
+      icon: 'none'
+    })
+    return
+  }
+
+  const [response, error] = await handleAsyncWithLoading(
+    resetPassword({
+      phone: formData.phone,
+      verifyCode: formData.verifyCode,
+      newPassword: formData.newPassword
+    }),
+    {
+      loading: { loading },
+      loadingText: '重置中...',
+      successMsg: '密码重置成功',
+      errorMsg: '重置失败，请重试',
+      onSuccess: () => {
+        // 跳转到登录页
+        setTimeout(() => {
+          uni.navigateBack()
+        }, 1500)
+      }
+    }
+  )
+}
+
+// 返回登录页
+const goToLogin = () => {
+  uni.navigateBack()
 }
 </script>
 
