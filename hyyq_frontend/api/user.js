@@ -3,7 +3,7 @@ import request from '@/utils/request.js'
 
 // 登录接口
 export const login = (data) => {
-  return request('/user/login', {
+  return request('/api/user/login', {
     method: 'POST',
     data
   })
@@ -11,7 +11,7 @@ export const login = (data) => {
 
 // 微信登录接口
 export const wechatLogin = (data) => {
-  return request('/api/wechat/login', {
+  return request('/api/user/wechat-login', {
     method: 'POST',
     data
   })
@@ -19,7 +19,7 @@ export const wechatLogin = (data) => {
 
 // 注册接口
 export const register = (data) => {
-  return request('/api/register', {
+  return request('/api/user/register', {
     method: 'POST',
     data
   })

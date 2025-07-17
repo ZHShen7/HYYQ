@@ -25,7 +25,6 @@ export default {
 	},
 	type:{
 		match:/0-2/,
-		required: true,
 		type: Number
 	},
 	height:{
