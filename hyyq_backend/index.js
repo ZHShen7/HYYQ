@@ -4,6 +4,7 @@ import KoaJson from "koa-json";
 import KoaLogger from "koa-logger";
 import KoaOnerror from "koa-onerror";
 import Router from "./src/routes/index.js";
+import cors from 'koa2-cors';
 import "./src/database/index.js";
 
 // 创建实例
@@ -15,6 +16,7 @@ app.on("error", (err, ctx) => console.error("server error", err, ctx)); // 捕�
 app.use(KoaLogger()); // 日志解析
 app.use(koaBody({ multipart: true })); // Body解析
 app.use(KoaJson()); // JSON解析
+app.use(cors());
 
 // 匹配路由
 Object.values(Router).forEach(v => app.use(v.routes(), v.allowedMethods()));
