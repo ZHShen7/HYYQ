@@ -2,6 +2,7 @@ import KoaRouter from "koa-router";
 import { AsyncTo } from "../../utils/function.js";
 import { UserModel } from "../../models/index.js";
 import AppConfig from "../../app.config.js";
+import { verifyWechatCode, generateWechatUserData } from "../../utils/wechat.js";
 
 const Router = KoaRouter();
 
@@ -176,5 +177,106 @@ Router.get(`${AppConfig.publicPath}/api/user/info`, async ctx => {
 		msg: "获取用户信息成功" 
 	};
 });
+
+// 微信登录接口 - 对应前端 /api/user/wechat-login
+Router.post(`${AppConfig.publicPath}/api/user/wechat-login`, async ctx => {
+	const params = ctx.request.body;
+	
+	// 参数验证
+	if (!params.code) {
+		ctx.body = { code: 400, msg: "微信登录凭证不能为空" };
+		return false;
+	}
+	
+	try {
+		// 调用微信API获取用户openid和session_key
+		const wechatResult = await verifyWechatCode(params.code);
+		
+		if (!wechatResult.success) {
+			ctx.body = { code: 400, msg: "微信登录失败" };
+			return false;
+		}
+		
+		const { openid, unionid, session_key } = wechatResult.data;
+		
+		// 查找是否已有该微信用户
+		const [err1, existingUser] = await AsyncTo(UserModel.findOne({ 
+			$or: [
+				{ wechatOpenId: openid },
+				{ wechatUnionId: unionid }
+			]
+		}));
+		
+		if (err1) {
+			ctx.body = { code: 500, msg: "服务器错误" };
+			console.log('查询微信用户失败:', err1);
+			return false;
+		}
+		
+		let user;
+		
+		if (existingUser) {
+			// 用户已存在，直接登录
+			user = existingUser;
+			
+			// 更新微信信息（如果有新的信息）
+			if (params.userInfo) {
+				const updateData = {};
+				if (params.userInfo.nickName) updateData.wechatNickname = params.userInfo.nickName;
+				if (params.userInfo.avatarUrl) updateData.wechatAvatar = params.userInfo.avatarUrl;
+				
+				if (Object.keys(updateData).length > 0) {
+					await AsyncTo(UserModel.findByIdAndUpdate(user._id, updateData));
+				}
+			}
+		} else {
+			// 新用户，创建账号
+			const userData = generateWechatUserData(openid, params.userInfo);
+			
+			const [err2, newUser] = await AsyncTo(UserModel.create(userData));
+			if (err2) {
+				ctx.body = { code: 500, msg: "创建微信用户失败" };
+				console.log('创建微信用户失败:', err2);
+				return false;
+			}
+			
+			user = newUser;
+		}
+		
+		// 生成token
+		const token = `token_${user._id}_${Date.now()}`;
+		
+		// 返回用户信息（不包含密码）
+		const userData = {
+			_id: user._id,
+			username: user.username,
+			name: user.name,
+			phone: user.phone,
+			type: user.type,
+			height: user.height,
+			weight: user.weight,
+			age: user.age,
+			sex: user.sex,
+			location: user.location,
+			wechatNickname: user.wechatNickname,
+			wechatAvatar: user.wechatAvatar,
+			loginType: user.loginType
+		};
+		
+		ctx.body = { 
+			code: 200, 
+			data: userData, 
+			token: token,
+			msg: existingUser ? "微信登录成功" : "微信注册并登录成功" 
+		};
+		
+	} catch (error) {
+		console.log('微信登录处理失败:', error);
+		ctx.body = { code: 500, msg: "微信登录失败" };
+		return false;
+	}
+});
+
+
 
 export default Router;
