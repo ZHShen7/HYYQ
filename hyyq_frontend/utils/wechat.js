@@ -1,24 +1,32 @@
 // 微信登录工具
-
+import { getPlatform } from './platform.js'
 import { isWechatMiniProgram, isApp } from './platform.js'
 
 // 微信小程序登录
 export const wechatMiniProgramLogin = () => {
   return new Promise((resolve, reject) => {
+    console.log('开始微信小程序登录...')
+    console.log('当前平台:', getPlatform())
+    
     if (!isWechatMiniProgram()) {
+      console.error('当前平台不支持微信小程序登录')
       reject(new Error('当前平台不支持微信小程序登录'))
       return
     }
 
+    console.log('调用uni.login...')
     // 获取微信登录凭证
     uni.login({
       provider: 'weixin',
       success: (loginRes) => {
+        console.log('uni.login成功:', loginRes)
         if (loginRes.code) {
+          console.log('获取到code:', loginRes.code)
           // 获取用户信息
           uni.getUserInfo({
             provider: 'weixin',
             success: (userInfoRes) => {
+              console.log('获取用户信息成功:', userInfoRes)
               resolve({
                 code: loginRes.code,
                 userInfo: userInfoRes.userInfo
@@ -34,11 +42,12 @@ export const wechatMiniProgramLogin = () => {
             }
           })
         } else {
+          console.error('未获取到code')
           reject(new Error('获取微信登录凭证失败'))
         }
       },
       fail: (err) => {
-        console.error('微信登录失败:', err)
+        console.error('uni.login失败:', err)
         reject(new Error('微信登录失败'))
       }
     })
@@ -86,11 +95,18 @@ export const wechatAppLogin = () => {
 
 // 通用微信登录
 export const wechatLogin = () => {
+  console.log('wechatLogin被调用，当前平台:', getPlatform())
+  console.log('isWechatMiniProgram():', isWechatMiniProgram())
+  console.log('isApp():', isApp())
+  
   if (isWechatMiniProgram()) {
+    console.log('选择微信小程序登录方式')
     return wechatMiniProgramLogin()
   } else if (isApp()) {
+    console.log('选择APP微信登录方式')
     return wechatAppLogin()
   } else {
+    console.error('当前平台不支持微信登录')
     return Promise.reject(new Error('当前平台不支持微信登录'))
   }
 }

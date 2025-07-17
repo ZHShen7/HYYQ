@@ -7,9 +7,14 @@
       </view>
       
       <view v-if="isLoggedInComputed" class="user-info">
-        <image class="avatar" :src="userInfo.avatar || '/static/default-avatar.png'" mode="aspectFill"></image>
+        <image 
+          class="avatar" 
+          :src="userInfo.avatar || userInfo.wechatAvatar || '/static/logo.png'" 
+          mode="aspectFill"
+          @error="handleAvatarError"
+        ></image>
         <view class="user-details">
-          <text class="username">{{ userInfo.username || '用户' }}</text>
+          <text class="username">{{ userInfo.username || userInfo.wechatNickname || '用户' }}</text>
           <text class="user-phone">{{ userInfo.phone || '' }}</text>
         </view>
       </view>
@@ -207,6 +212,17 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString('zh-CN')
 }
 
+// 处理头像加载错误
+const handleAvatarError = (e) => {
+  console.log('头像加载失败:', e)
+}
+
+// 处理图片加载错误
+const handleImageError = (e) => {
+  console.log('图片加载失败:', e)
+  // 可以在这里设置一个默认的base64头像或者使用其他处理方式
+}
+
 // 检查微信登录支持
 const checkWechatLoginSupport = () => {
   showWechatLogin.value = supportWechatLogin()
@@ -247,11 +263,11 @@ const handleWechatLogin = async () => {
         userInfo.value = data.userInfo || {}
         loginStatus.value = true
         // 跳转到首页
-        setTimeout(() => {
-          uni.reLaunch({
-            url: '/pages/index/index'
-          })
-        }, 1500)
+        // setTimeout(() => {
+        //   uni.reLaunch({
+        //     url: '/pages/index/index'
+        //   })
+        // }, 1500)
       }
     }
   )

@@ -41,5 +41,27 @@ export default {
 	},
 	location:{
 		type: String || Number
+	},
+	// 微信登录相关字段
+	wechatOpenId: {
+		type: String,
+		trim: true
+	},
+	wechatUnionId: {
+		type: String,
+		trim: true
+	},
+	wechatNickname: {
+		type: String,
+		trim: true
+	},
+	wechatAvatar: {
+		type: String,
+		trim: true
+	},
+	loginType: {
+		type: String,
+		enum: ['password', 'wechat'],
+		default: 'password'
 	}
 };
