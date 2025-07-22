@@ -165,7 +165,7 @@ const handleLogin = async () => {
         // 跳转到首页
         setTimeout(() => {
           uni.reLaunch({
-            url: '/pages/index/index'
+            url: '/pages/home/index'
           })
         }, 1500)
       }
@@ -238,7 +238,7 @@ const handleWechatLogin = async () => {
         // 跳转到首页
         setTimeout(() => {
           uni.reLaunch({
-            url: '/pages/index/index'
+            url: '/pages/home/index'
           })
         }, 1500)
       }
