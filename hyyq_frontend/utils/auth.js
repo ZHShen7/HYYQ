@@ -1,4 +1,5 @@
 // 认证相关工具函数
+import { ref, computed } from 'vue'
 
 // 保存用户token
 export const setToken = (token) => {
@@ -45,13 +46,43 @@ export const clearAuth = () => {
 // 跳转到登录页
 export const goToLogin = () => {
   uni.navigateTo({
-    url: '/pages/login/login'
+    url: '/pages/auth/login'
   })
 }
 
 // 跳转到首页
 export const goToHome = () => {
   uni.switchTab({
-    url: '/pages/index/index'
+    url: '/pages/home/index'
   })
+}
+
+// 响应式认证状态管理
+export const useAuth = () => {
+  const loginStatus = ref(isLoggedIn())
+  const userInfo = ref(getUserInfo() || {})
+
+  const updateAuthStatus = () => {
+    loginStatus.value = isLoggedIn()
+    userInfo.value = getUserInfo() || {}
+  }
+
+  const login = (token, user) => {
+    setToken(token)
+    setUserInfo(user)
+    updateAuthStatus()
+  }
+
+  const logout = () => {
+    clearAuth()
+    updateAuthStatus()
+  }
+
+  return {
+    isLoggedIn: computed(() => loginStatus.value),
+    userInfo: computed(() => userInfo.value),
+    login,
+    logout,
+    updateAuthStatus
+  }
 } 

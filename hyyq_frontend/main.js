@@ -13,8 +13,14 @@ app.$mount()
 
 // #ifdef VUE3
 import { createSSRApp } from 'vue'
+import CustomTabBar from './custom-tab-bar/index.vue'
+
 export function createApp() {
   const app = createSSRApp(App)
+  
+  // 注册全局组件
+  app.component('CustomTabBar', CustomTabBar)
+  
   return {
     app
   }

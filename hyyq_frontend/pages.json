@@ -1,36 +1,126 @@
 {
 	"pages": [
 		{
-			"path": "pages/index/index",
+			"path": "pages/home/index",
 			"style": {
 				"navigationBarTitleText": "首页"
 			}
 		},
 		{
-			"path": "pages/login/login",
+			"path": "pages/orders/orders",
+			"style": {
+				"navigationBarTitleText": "订单"
+			}
+		},
+		{
+			"path": "pages/club/club",
+			"style": {
+				"navigationBarTitleText": "俱乐部"
+			}
+		},
+		{
+			"path": "pages/profile/profile",
+			"style": {
+				"navigationBarTitleText": "我的",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/profile/settings/settings",
+			"style": {
+				"navigationBarTitleText": "设置",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/publish/index",
+			"style": {
+				"navigationBarTitleText": "发布"
+			}
+		},
+		{
+			"path": "pages/publish/post",
+			"style": {
+				"navigationBarTitleText": "发布动态",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/publish/match",
+			"style": {
+				"navigationBarTitleText": "发布约球",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/publish/activity",
+			"style": {
+				"navigationBarTitleText": "发布活动",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/auth/login",
 			"style": {
 				"navigationBarTitleText": "登录",
 				"navigationStyle": "custom"
 			}
 		},
 		{
-			"path": "pages/register/register",
+			"path": "pages/auth/register",
 			"style": {
 				"navigationBarTitleText": "注册",
 				"navigationStyle": "custom"
 			}
 		},
 		{
-			"path": "pages/forgot-password/forgot-password",
+			"path": "pages/auth/forgot-password",
 			"style": {
 				"navigationBarTitleText": "忘记密码",
 				"navigationStyle": "custom"
 			}
 		}
 	],
+	"tabBar": {
+		"custom": true,
+		"color": "#7A7E83",
+		"selectedColor": "#3cc51f",
+		"borderStyle": "black",
+		"backgroundColor": "#ffffff",
+		"list": [
+			{
+				"pagePath": "pages/home/index",
+				"iconPath": "static/tabbar/home.png",
+				"selectedIconPath": "static/tabbar/home-active.png",
+				"text": "首页"
+			},
+			{
+				"pagePath": "pages/orders/orders",
+				"iconPath": "static/tabbar/order.png",
+				"selectedIconPath": "static/tabbar/order-active.png",
+				"text": "订单"
+			},
+			{
+				"pagePath": "pages/club/club",
+				"iconPath": "static/tabbar/club.png",
+				"selectedIconPath": "static/tabbar/club-active.png",
+				"text": "俱乐部"
+			},
+			{
+				"pagePath": "pages/profile/profile",
+				"iconPath": "static/tabbar/profile.png",
+				"selectedIconPath": "static/tabbar/profile-active.png",
+				"text": "我的"
+			}
+		]
+	},
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "UniApp 应用",
+		"navigationBarTitleText": "约约球球",
 		"navigationBarBackgroundColor": "#F8F8F8",
 		"backgroundColor": "#F8F8F8"
 	},
