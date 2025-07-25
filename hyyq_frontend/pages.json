@@ -9,7 +9,7 @@
 		{
 			"path": "pages/orders/orders",
 			"style": {
-				"navigationBarTitleText": "订单"
+				"navigationBarTitleText": "约球"
 			}
 		},
 		{
@@ -102,7 +102,7 @@
 				"pagePath": "pages/orders/orders",
 				"iconPath": "static/tabbar/order.png",
 				"selectedIconPath": "static/tabbar/order-active.png",
-				"text": "订单"
+				"text": "约球"
 			},
 			{
 				"pagePath": "pages/club/club",
