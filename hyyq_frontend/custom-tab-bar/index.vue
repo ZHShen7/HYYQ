@@ -21,7 +21,7 @@
         :src="selected === 1 ? '/static/tabbar/order-active.png' : '/static/tabbar/order.png'"
         class="tab-icon"
       />
-      <text class="tab-text">订单</text>
+      <text class="tab-text">约球</text>
     </view>
     
     <!-- 发布按钮 - 特殊样式 -->
@@ -81,7 +81,7 @@ export default {
           pagePath: "/pages/orders/orders",
           iconPath: "/static/tabbar/order.png",
           selectedIconPath: "/static/tabbar/order-active.png",
-          text: "订单"
+          text: "约球"
         },
         {
           pagePath: "/pages/club/club",

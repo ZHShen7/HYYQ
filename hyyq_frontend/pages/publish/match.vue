@@ -1,21 +1,17 @@
 <template>
   <view class="match-container">
-    <!-- 自定义导航栏 -->
-    <view class="custom-navbar">
+    <!-- 自定义导航栏 - 仅在非小程序端显示 -->
+    <view class="custom-navbar" v-if="!isMiniProgram">
       <view class="nav-left" @click="goBack">
         <text class="back-icon">←</text>
         <text class="back-text">返回</text>
       </view>
       <text class="nav-title">发布约球</text>
-      <view class="nav-right">
-        <button class="publish-btn" @click="handlePublish" :disabled="!canPublish">
-          发布
-        </button>
-      </view>
+      <view class="nav-right"></view>
     </view>
     
     <!-- 内容区域 -->
-    <view class="content-area">
+    <view class="content-area" :class="{ 'mini-content': isMiniProgram }">
       <!-- 内容描述 -->
       <view class="form-section">
         <textarea 
@@ -48,11 +44,19 @@
       <!-- 约球时间 -->
       <view class="form-section">
         <text class="section-title">约球时间</text>
-        <view class="time-input" @click="chooseTime">
-          <text class="time-icon">🕐</text>
-          <text class="time-text">{{ matchTime || '选择约球时间' }}</text>
-          <text class="time-arrow">></text>
-        </view>
+        <picker 
+          mode="multiSelector" 
+          :range="dateTimeRange" 
+          :value="dateTimeValue"
+          @change="onDateTimeChange"
+          @columnchange="onDateTimeColumnChange"
+        >
+          <view class="time-input">
+            <text class="time-icon">🕐</text>
+            <text class="time-text">{{ matchTime || '选择约球时间' }}</text>
+            <text class="time-arrow">></text>
+          </view>
+        </picker>
       </view>
       
       <!-- 约球地点 -->
@@ -131,12 +135,21 @@
         </view>
       </view>
     </view>
+    
+    <!-- 底部发布按钮 -->
+    <view class="bottom-publish">
+      <button class="bottom-publish-btn" @click="handlePublish" :disabled="!canPublish">
+        发布
+      </button>
+    </view>
   </view>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '@/utils/auth.js'
+import { isWechatMiniProgram } from '@/utils/platform.js'
+import { publishMatch } from '../../api/match'
 
 const { isLoggedIn } = useAuth()
 
@@ -150,6 +163,10 @@ const selectedLevel = ref('')
 const contact = ref('')
 const images = ref([])
 
+// 时间选择器相关数据
+const dateTimeValue = ref([0, 0, 0])
+const dateTimeRange = ref([[], [], []])
+
 // 选项数据
 const sports = ['足球', '篮球', '羽毛球', '网球', '乒乓球', '排球', '其他']
 const levels = ['新手', '入门', '进阶', '高手', '不限']
@@ -157,6 +174,11 @@ const levels = ['新手', '入门', '进阶', '高手', '不限']
 // 计算属性
 const canPublish = computed(() => {
   return content.value.trim().length > 0 && selectedSport.value && matchTime.value && location.value
+})
+
+// 平台检测
+const isMiniProgram = computed(() => {
+  return isWechatMiniProgram()
 })
 
 // 返回上一页
@@ -183,22 +205,105 @@ const getSportIcon = (sport) => {
   return icons[sport] || '🎯'
 }
 
-// 选择时间
-const chooseTime = () => {
-  uni.showDatePickerView({
-    mode: 'datetime',
+// 初始化日期时间选择器数据
+const initDateTimeData = () => {
+  const currentDate = new Date()
+  const dates = []
+  const hours = []
+  const minutes = []
+  
+  // 生成接下来30天的日期
+  for (let i = 0; i < 30; i++) {
+    const date = new Date(currentDate)
+    date.setDate(currentDate.getDate() + i)
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    const weekDay = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][date.getDay()]
+    dates.push(`${month}月${day}日 ${weekDay}`)
+  }
+  
+  // 生成24小时
+  for (let i = 0; i < 24; i++) {
+    hours.push(i.toString().padStart(2, '0') + '时')
+  }
+  
+  // 生成60分钟
+  for (let i = 0; i < 60; i++) {
+    minutes.push(i.toString().padStart(2, '0') + '分')
+  }
+  
+  dateTimeRange.value = [dates, hours, minutes]
+  
+  // 默认设置为当前时间的下一个小时
+  const nextHour = (currentDate.getHours() + 1) % 24
+  dateTimeValue.value = [0, nextHour, 0]
+  
+  // 设置默认显示时间
+  updateMatchTimeDisplay()
+}
+
+// 日期时间选择变化事件
+const onDateTimeChange = (e) => {
+  dateTimeValue.value = e.detail.value
+  updateMatchTimeDisplay()
+}
+
+// 日期时间列变化事件
+const onDateTimeColumnChange = (e) => {
+  dateTimeValue.value[e.detail.column] = e.detail.value
+  updateMatchTimeDisplay()
+}
+
+// 更新显示的约球时间
+const updateMatchTimeDisplay = () => {
+  const [dateIndex, hourIndex, minuteIndex] = dateTimeValue.value
+  const dateStr = dateTimeRange.value[0][dateIndex]
+  const hourStr = dateTimeRange.value[1][hourIndex]
+  const minuteStr = dateTimeRange.value[2][minuteIndex]
+  
+  if (dateStr && hourStr && minuteStr) {
+    matchTime.value = `${dateStr} ${hourStr}${minuteStr}`
+  }
+}
+
+// 手动输入位置
+const inputLocation = () => {
+  uni.showModal({
+    title: '手动输入位置',
+    content: '请输入约球地点：',
+    editable: true,
+    placeholderText: '请输入地点名称',
     success: (res) => {
-      const date = new Date(res.value)
-      matchTime.value = date.toLocaleString('zh-CN')
+      if (res.confirm && res.content && res.content.trim()) {
+        location.value = res.content.trim()
+      }
     }
   })
 }
 
 // 选择位置
 const chooseLocation = () => {
+  console.log('开始选择位置')
+  
   uni.chooseLocation({
     success: (res) => {
+      console.log('选择位置成功:', res)
       location.value = res.name
+    },
+    fail: (err) => {
+      console.error('选择位置失败:', err)
+      // 提供备用方案
+      uni.showModal({
+        title: '选择位置失败',
+        content: '是否手动输入约球地点？',
+        confirmText: '手动输入',
+        cancelText: '取消',
+        success: (modalRes) => {
+          if (modalRes.confirm) {
+            inputLocation()
+          }
+        }
+      })
     }
   })
 }
@@ -226,7 +331,7 @@ const deleteImage = (index) => {
 }
 
 // 发布内容
-const handlePublish = () => {
+const handlePublish = async () => {
   if (!canPublish.value) {
     uni.showToast({
       title: '请填写完整信息',
@@ -239,35 +344,64 @@ const handlePublish = () => {
     title: '发布中...'
   })
   
-  // 模拟发布过程
-  setTimeout(() => {
-    uni.hideLoading()
-    uni.showToast({
-      title: '发布成功',
-      icon: 'success'
-    })
+  try {
+    // 构建发布数据
+    const publishData = {
+      content: content.value.trim(),
+      sport: selectedSport.value,
+      matchTime: matchTime.value,
+      location: location.value,
+      needPeople: parseInt(needPeople.value),
+      level: selectedLevel.value,
+      contact: contact.value.trim(),
+      images: images.value
+    }
     
-    // 清空表单
-    content.value = ''
-    selectedSport.value = ''
-    matchTime.value = ''
-    location.value = ''
-    needPeople.value = ''
-    selectedLevel.value = ''
-    contact.value = ''
-    images.value = []
+    // 调用发布约球接口
+    const response = await publishMatch(publishData)
     
-    // 返回首页
-    setTimeout(() => {
-      uni.switchTab({
-        url: '/pages/home/index'
+    if (response.code === 200) {
+      uni.hideLoading()
+      uni.showToast({
+        title: '发布成功',
+        icon: 'success'
       })
-    }, 1500)
-  }, 2000)
+      
+      // 清空表单
+      content.value = ''
+      selectedSport.value = ''
+      matchTime.value = ''
+      location.value = ''
+      needPeople.value = ''
+      selectedLevel.value = ''
+      contact.value = ''
+      images.value = []
+      
+      // 重置日期时间选择器
+      initDateTimeData()
+      
+      // 返回约球页面
+      setTimeout(() => {
+        uni.switchTab({
+          url: '/pages/orders/orders'
+        })
+      }, 1500)
+    } else {
+      throw new Error(response.msg || '发布失败')
+    }
+  } catch (error) {
+    uni.hideLoading()
+    console.error('发布约球失败:', error)
+    uni.showToast({
+      title: error.message || '发布失败，请重试',
+      icon: 'none'
+    })
+  }
 }
 
 onMounted(() => {
   console.log('发布约球页面加载')
+  initDateTimeData()
 })
 </script>
 
@@ -333,8 +467,8 @@ onMounted(() => {
 }
 
 .content-area {
-  margin-top: 88rpx;
   padding: 20rpx;
+  padding-bottom: 100rpx; /* 添加底部padding，避免被底部按钮遮挡 */
 }
 
 .form-section {
@@ -551,5 +685,46 @@ onMounted(() => {
 .upload-text {
   font-size: 24rpx;
   color: #999;
+}
+
+.title-text {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.mini-content {
+  padding-bottom: 140rpx; /* 小程序端底部按钮区域更大 */
+}
+
+.bottom-publish {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120rpx;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1rpx solid #e5e5e5;
+  z-index: 999;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+
+.bottom-publish-btn {
+  width: 100%;
+  height: 80rpx;
+  background-color: #007aff;
+  color: white;
+  border: none;
+  border-radius: 50rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.bottom-publish-btn:disabled {
+  background-color: #ccc;
 }
 </style> 
