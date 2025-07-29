@@ -1,5 +1,11 @@
 <template>
   <view class="forgot-password-container">
+    <!-- 返回按钮 -->
+    <view :style="{ height: `${searchHeight}rpx`, top: `${buttonTop}rpx`}" class="back-button" @click="goToHome">
+      <text class="back-icon">←</text>
+      <text class="back-text">返回首页</text>
+    </view>
+    
     <view class="forgot-password-header">
       <image class="logo" src="/static/logo.png" mode="aspectFit"></image>
       <text class="title">重置密码</text>
@@ -68,13 +74,18 @@
 import { ref, reactive } from 'vue'
 import FormInput from '@/components/FormInput.vue'
 import SubmitButton from '@/components/SubmitButton.vue'
+import { goToHome } from '@/utils/auth.js'
 import { sendVerifyCode as sendVerifyCodeApi, resetPassword } from '@/api/user'
 import { validatePassword, validatePhone, validateCode } from '@/utils/validator.js'
 import { handleAsyncWithLoading } from '@/utils/async.js'
+import { useMenuButton } from '@/utils/use-menu-button.js'
 
 // 响应式数据
 const loading = ref(false)
 const codeCountdown = ref(0)
+
+// 使用胶囊按钮适配
+const { buttonTop, searchHeight } = useMenuButton()
 
 const formData = reactive({
   phone: '',
@@ -222,10 +233,45 @@ const goToLogin = () => {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 40rpx;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.back-button {
+  position: absolute;
+  left: 40rpx;
+  display: flex;
+  align-items: center;
+  padding: 12rpx 24rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 30rpx;
+  backdrop-filter: blur(10rpx);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+  z-index: 10;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.back-button:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.back-icon {
+  font-size: 32rpx;
+  color: #fff;
+  margin-right: 8rpx;
+  font-weight: bold;
+}
+
+.back-text {
+  font-size: 26rpx;
+  color: #fff;
 }
 
 .forgot-password-header {
   text-align: center;
+  margin-top: 100rpx;
   margin-bottom: 60rpx;
 }
 

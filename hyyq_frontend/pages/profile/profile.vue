@@ -281,6 +281,7 @@ onMounted(() => {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding-bottom: 160rpx; // 为自定义tabBar留出空间
   padding-top: 40rpx;
+  box-sizing: border-box;
 }
 
 // 渐变背景

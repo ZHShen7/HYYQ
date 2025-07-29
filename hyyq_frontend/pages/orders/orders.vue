@@ -500,6 +500,7 @@ onMounted(() => {
   min-height: 100vh;
   background-color: #f5f5f5;
   padding-bottom: 160rpx;
+  box-sizing: border-box;
 }
 
 .login-prompt {

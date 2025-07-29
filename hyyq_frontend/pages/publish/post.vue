@@ -180,6 +180,7 @@ onMounted(() => {
 .post-container {
   min-height: 100vh;
   background-color: #f5f5f5;
+  box-sizing: border-box;
 }
 
 .custom-navbar {

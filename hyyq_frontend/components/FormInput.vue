@@ -8,11 +8,12 @@
         :placeholder="placeholder"
         :value="modelValue"
         :maxlength="maxlength"
-        :disabled="disabled"value
+        :disabled="disabled"
         @input="handleInput"
         @focus="handleFocus"
         @blur="handleBlur"
         class="input-field"
+        :class="{ 'has-suffix': suffix }"
         :style="{ pointerEvents: 'auto' }"
       />
       <textarea
@@ -29,7 +30,7 @@
         :style="{ pointerEvents: 'auto' }"
       />
       <view class="input-suffix" v-if="suffix">
-        <slot name="suffix">{{ suffix }}</slot>
+        <slot name="suffix"></slot>
       </view>
     </view>
     <view class="error-message" v-if="errorMessage">{{ errorMessage }}</view>
@@ -66,7 +67,7 @@ const props = defineProps({
     default: false
   },
   suffix: {
-    type: String,
+    type: Boolean,
     default: ''
   },
   errorMessage: {
@@ -102,7 +103,6 @@ const hasError = computed(() => {
 
 // 方法
 const handleInput = (e) => {
-  console.log('input',e)
   // H5 端使用 e.target.value，小程序端使用 e.detail.value
   const value = e.detail.value
   emit('update:modelValue', value)
@@ -157,11 +157,17 @@ const handleBlur = (e) => {
   height: 100%;
   font-size: 28rpx;
   padding-left: 24rpx;
+  padding-right: 24rpx;
   color: #333;
   background: transparent;
   border: none;
   outline: none;
   box-sizing: border-box;
+}
+
+/* 有后缀时增加右边距，为按钮留空间 */
+.input-field.has-suffix {
+  padding-right: 140rpx;
 }
 
 .textarea-field {
@@ -176,8 +182,8 @@ const handleBlur = (e) => {
   transform: translateY(-50%);
   font-size: 28rpx;
   color: #999;
-  /* 确保后缀不会阻挡输入框 */
-  pointer-events: none;
+  /* 允许后缀内容接收点击事件 */
+  pointer-events: auto;
   z-index: 2;
 }
 

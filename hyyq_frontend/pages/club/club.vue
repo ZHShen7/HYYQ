@@ -49,6 +49,7 @@ onMounted(() => {
   min-height: 100vh;
   background-color: #f5f5f5;
   padding-bottom: 160rpx; /* 为自定义tabBar留出空间 */
+  box-sizing: border-box;
 }
 
 .login-prompt {
