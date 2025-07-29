@@ -57,13 +57,7 @@
         </view>
       </view>
       
-      <!-- 发布按钮 -->
-      <view class="publish-section">
-        <button class="publish-button" @click="showPublishModal">
-          <text class="publish-icon">+</text>
-          <text class="publish-text">发布内容</text>
-        </button>
-      </view>
+
 
       <!-- 推荐内容区域 -->
       <view class="recommend-section">
@@ -103,8 +97,6 @@
       </view>
     </view>
     
-    <!-- 发布弹窗组件 -->
-    <PublishModal ref="publishModalRef" />
     
     <!-- 自定义tabBar -->
     <CustomTabBar :selected="0" />
@@ -115,12 +107,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { isLoggedIn, getUserInfo } from '@/utils/auth.js'
-import PublishModal from '@/pages/publish/index.vue'
 
 // 响应式数据
 const userInfo = ref({})
 const loginStatus = ref(false)
-const publishModalRef = ref(null)
 
 // 计算属性
 const isLoggedInComputed = computed(() => {
@@ -188,13 +178,6 @@ const handleFeatureClick = (feature) => {
   }
 }
 
-// 显示发布弹窗
-const showPublishModal = () => {
-  if (publishModalRef.value) {
-    publishModalRef.value.showPublishModal()
-  }
-}
-
 // 处理头像加载错误
 const handleAvatarError = (e) => {
   console.log('头像加载失败:', e)
@@ -220,6 +203,7 @@ onShow(() => {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   padding: 40rpx;
   padding-bottom: 160rpx; /* 为自定义tabBar留出空间 */
+  box-sizing: border-box;
 }
 
 .header {

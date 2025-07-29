@@ -230,6 +230,7 @@ onMounted(() => {
 .settings-container {
   min-height: 100vh;
   background-color: #f5f5f5;
+  box-sizing: border-box;
 }
 
 .settings-content {

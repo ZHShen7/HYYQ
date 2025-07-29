@@ -9,48 +9,33 @@
       <text class="nav-title">发布约球</text>
       <view class="nav-right"></view>
     </view>
-    
+
     <!-- 内容区域 -->
     <view class="content-area" :class="{ 'mini-content': isMiniProgram }">
       <!-- 内容描述 -->
       <view class="form-section">
-        <textarea 
-          class="content-input" 
-          v-model="content"
-          placeholder="描述一下你想约球的情况..."
-          maxlength="500"
-          auto-height
-        ></textarea>
+        <textarea class="content-input" v-model="content" placeholder="描述一下你想约球的情况..." maxlength="500"
+          auto-height></textarea>
         <text class="char-count">{{ content.length }}/500</text>
       </view>
-      
+
       <!-- 运动类型 -->
       <view class="form-section">
         <text class="section-title">运动类型</text>
         <view class="sport-selector">
-          <view 
-            class="sport-item" 
-            :class="{ active: selectedSport === sport }"
-            v-for="sport in sports"
-            :key="sport"
-            @click="selectSport(sport)"
-          >
+          <view class="sport-item" :class="{ active: selectedSport === sport }" v-for="sport in sports" :key="sport"
+            @click="selectSport(sport)">
             <text class="sport-icon">{{ getSportIcon(sport) }}</text>
             <text class="sport-text">{{ sport }}</text>
           </view>
         </view>
       </view>
-      
+
       <!-- 约球时间 -->
       <view class="form-section">
         <text class="section-title">约球时间</text>
-        <picker 
-          mode="multiSelector" 
-          :range="dateTimeRange" 
-          :value="dateTimeValue"
-          @change="onDateTimeChange"
-          @columnchange="onDateTimeColumnChange"
-        >
+        <picker mode="multiSelector" :range="dateTimeRange" :value="dateTimeValue" @change="onDateTimeChange"
+          @columnchange="onDateTimeColumnChange">
           <view class="time-input">
             <text class="time-icon">🕐</text>
             <text class="time-text">{{ matchTime || '选择约球时间' }}</text>
@@ -58,7 +43,7 @@
           </view>
         </picker>
       </view>
-      
+
       <!-- 约球地点 -->
       <view class="form-section">
         <text class="section-title">约球地点</text>
@@ -68,74 +53,52 @@
           <text class="location-arrow">></text>
         </view>
       </view>
-      
+
       <!-- 人数需求 -->
       <view class="form-section">
         <text class="section-title">人数需求</text>
         <view class="people-selector">
           <view class="people-input">
             <text class="people-label">需要人数：</text>
-            <input 
-              class="people-number" 
-              v-model="needPeople" 
-              type="number" 
-              placeholder="1"
-            />
+            <input class="people-number" v-model="needPeople" type="number" placeholder="1" />
             <text class="people-unit">人</text>
           </view>
         </view>
       </view>
-      
+
       <!-- 技能水平 -->
       <view class="form-section">
         <text class="section-title">技能水平要求</text>
         <view class="level-selector">
-          <view 
-            class="level-item" 
-            :class="{ active: selectedLevel === level }"
-            v-for="level in levels"
-            :key="level"
-            @click="selectLevel(level)"
-          >
+          <view class="level-item" :class="{ active: selectedLevel === level }" v-for="level in levels" :key="level"
+            @click="selectLevel(level)">
             <text class="level-text">{{ level }}</text>
           </view>
         </view>
       </view>
-      
+
       <!-- 联系方式 -->
       <view class="form-section">
         <text class="section-title">联系方式</text>
-        <input 
-          class="contact-input" 
-          v-model="contact"
-          placeholder="微信号或手机号"
-        />
+        <input class="contact-input" v-model="contact" placeholder="微信号或手机号" />
       </view>
-      
+
       <!-- 图片上传 -->
       <view class="form-section">
         <text class="section-title">添加图片</text>
         <view class="image-uploader">
-          <view 
-            class="upload-item" 
-            v-for="(image, index) in images" 
-            :key="index"
-          >
+          <view class="upload-item" v-for="(image, index) in images" :key="index">
             <image :src="image" mode="aspectFill" class="uploaded-image"></image>
             <view class="delete-btn" @click="deleteImage(index)">×</view>
           </view>
-          <view 
-            class="upload-btn" 
-            @click="chooseImage" 
-            v-if="images.length < 9"
-          >
+          <view class="upload-btn" @click="chooseImage" v-if="images.length < 9">
             <text class="upload-icon">+</text>
             <text class="upload-text">添加图片</text>
           </view>
         </view>
       </view>
     </view>
-    
+
     <!-- 底部发布按钮 -->
     <view class="bottom-publish">
       <button class="bottom-publish-btn" @click="handlePublish" :disabled="!canPublish">
@@ -188,6 +151,7 @@ const goBack = () => {
 
 // 选择运动类型
 const selectSport = (sport) => {
+  console.log('我出发了',sport)
   selectedSport.value = sport
 }
 
@@ -211,7 +175,7 @@ const initDateTimeData = () => {
   const dates = []
   const hours = []
   const minutes = []
-  
+
   // 生成接下来30天的日期
   for (let i = 0; i < 30; i++) {
     const date = new Date(currentDate)
@@ -221,23 +185,23 @@ const initDateTimeData = () => {
     const weekDay = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][date.getDay()]
     dates.push(`${month}月${day}日 ${weekDay}`)
   }
-  
+
   // 生成24小时
   for (let i = 0; i < 24; i++) {
     hours.push(i.toString().padStart(2, '0') + '时')
   }
-  
+
   // 生成60分钟
   for (let i = 0; i < 60; i++) {
     minutes.push(i.toString().padStart(2, '0') + '分')
   }
-  
+
   dateTimeRange.value = [dates, hours, minutes]
-  
+
   // 默认设置为当前时间的下一个小时
   const nextHour = (currentDate.getHours() + 1) % 24
   dateTimeValue.value = [0, nextHour, 0]
-  
+
   // 设置默认显示时间
   updateMatchTimeDisplay()
 }
@@ -260,7 +224,7 @@ const updateMatchTimeDisplay = () => {
   const dateStr = dateTimeRange.value[0][dateIndex]
   const hourStr = dateTimeRange.value[1][hourIndex]
   const minuteStr = dateTimeRange.value[2][minuteIndex]
-  
+
   if (dateStr && hourStr && minuteStr) {
     matchTime.value = `${dateStr} ${hourStr}${minuteStr}`
   }
@@ -284,7 +248,7 @@ const inputLocation = () => {
 // 选择位置
 const chooseLocation = () => {
   console.log('开始选择位置')
-  
+
   uni.chooseLocation({
     success: (res) => {
       console.log('选择位置成功:', res)
@@ -339,11 +303,11 @@ const handlePublish = async () => {
     })
     return
   }
-  
+
   uni.showLoading({
     title: '发布中...'
   })
-  
+
   try {
     // 构建发布数据
     const publishData = {
@@ -356,17 +320,17 @@ const handlePublish = async () => {
       contact: contact.value.trim(),
       images: images.value
     }
-    
+
     // 调用发布约球接口
     const response = await publishMatch(publishData)
-    
+
     if (response.code === 200) {
       uni.hideLoading()
       uni.showToast({
         title: '发布成功',
         icon: 'success'
       })
-      
+
       // 清空表单
       content.value = ''
       selectedSport.value = ''
@@ -376,10 +340,10 @@ const handlePublish = async () => {
       selectedLevel.value = ''
       contact.value = ''
       images.value = []
-      
+
       // 重置日期时间选择器
       initDateTimeData()
-      
+
       // 返回约球页面
       setTimeout(() => {
         uni.switchTab({
@@ -409,6 +373,7 @@ onMounted(() => {
 .match-container {
   min-height: 100vh;
   background-color: #f5f5f5;
+  box-sizing: border-box;
 }
 
 .custom-navbar {
@@ -468,7 +433,8 @@ onMounted(() => {
 
 .content-area {
   padding: 20rpx;
-  padding-bottom: 100rpx; /* 添加底部padding，避免被底部按钮遮挡 */
+  padding-bottom: 100rpx;
+  /* 添加底部padding，避免被底部按钮遮挡 */
 }
 
 .form-section {
@@ -694,7 +660,8 @@ onMounted(() => {
 }
 
 .mini-content {
-  padding-bottom: 140rpx; /* 小程序端底部按钮区域更大 */
+  padding-bottom: 140rpx;
+  /* 小程序端底部按钮区域更大 */
 }
 
 .bottom-publish {
@@ -727,4 +694,4 @@ onMounted(() => {
 .bottom-publish-btn:disabled {
   background-color: #ccc;
 }
-</style> 
+</style>

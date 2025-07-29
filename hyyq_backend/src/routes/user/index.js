@@ -1,18 +1,48 @@
 import KoaRouter from "koa-router";
 import { AsyncTo } from "../../utils/function.js";
-import { UserModel } from "../../models/index.js";
+import { UserModel, SmsCodeModel } from "../../models/index.js";
 import AppConfig from "../../app.config.js";
 import { verifyWechatCode, generateWechatUserData } from "../../utils/wechat.js";
+import { sendSms, generateVerifyCode, validatePhone, checkSendFrequency } from "../../utils/sms.js";
 
 const Router = KoaRouter();
+
+// 短信发送频率限制记录（生产环境建议使用Redis）
+const smsFrequencyCache = {};
 
 // 用户注册接口 - 对应前端 /api/register
 Router.post(`${AppConfig.publicPath}/api/user/register`, async ctx => {
 	const params = ctx.request.body;
 	
 	// 参数验证
-	if (!params.username || !params.password || !params.phone) {
-		ctx.body = { code: 400, msg: "用户名、密码和手机号不能为空" };
+	if (!params.username || !params.password || !params.phone || !params.verifyCode) {
+		ctx.body = { code: 400, msg: "用户名、密码、手机号和验证码不能为空" };
+		return false;
+	}
+	
+	// 验证手机号格式
+	if (!validatePhone(params.phone)) {
+		ctx.body = { code: 400, msg: "手机号格式不正确" };
+		return false;
+	}
+	
+	// 验证短信验证码
+	const [codeErr, smsCode] = await AsyncTo(SmsCodeModel.findOne({
+		phone: params.phone,
+		code: params.verifyCode,
+		type: 'register',
+		used: false,
+		expiredAt: { $gt: new Date() } // 未过期
+	}));
+	
+	if (codeErr) {
+		ctx.body = { code: 500, msg: "服务器错误" };
+		console.log('查询验证码失败:', codeErr);
+		return false;
+	}
+	
+	if (!smsCode) {
+		ctx.body = { code: 400, msg: "验证码无效或已过期" };
 		return false;
 	}
 	
@@ -42,10 +72,19 @@ Router.post(`${AppConfig.publicPath}/api/user/register`, async ctx => {
 		return false;
 	}
 	
-	// 创建新用户
-	const [err3, newUser] = await AsyncTo(UserModel.create(params));
-	if (newUser && err3) {
-	// 返回成功响应，不包含密码
+	try {
+		// 标记验证码为已使用
+		await AsyncTo(SmsCodeModel.findByIdAndUpdate(smsCode._id, { used: true }));
+		
+		// 创建新用户
+		const [err3, newUser] = await AsyncTo(UserModel.create(params));
+		if (err3) {
+			ctx.body = { code: 500, msg: "注册失败" };
+			console.log('创建用户失败:', err3);
+			return false;
+		}
+		
+		// 返回成功响应，不包含密码
 		const userData = {
 			_id: newUser._id,
 			username: newUser.username,
@@ -64,9 +103,10 @@ Router.post(`${AppConfig.publicPath}/api/user/register`, async ctx => {
 			data: userData, 
 			msg: "注册成功" 
 		};
-	} else {
+		
+	} catch (error) {
+		console.log('注册处理失败:', error);
 		ctx.body = { code: 500, msg: "注册失败" };
-		console.log('创建用户失败:', err3);
 		return false;
 	}
 });
@@ -277,6 +317,198 @@ Router.post(`${AppConfig.publicPath}/api/user/wechat-login`, async ctx => {
 	}
 });
 
+// 发送短信验证码接口 - 对应前端 /api/user/send-verify-code
+Router.post(`${AppConfig.publicPath}/api/user/send-verify-code`, async ctx => {
+	const params = ctx.request.body;
+	
+	// 参数验证
+	if (!params.phone) {
+		ctx.body = { code: 400, msg: "手机号不能为空" };
+		return false;
+	}
+	
+	// 验证手机号格式
+	if (!validatePhone(params.phone)) {
+		ctx.body = { code: 400, msg: "手机号格式不正确" };
+		return false;
+	}
+	
+	// 检查发送频率限制
+	const frequencyCheck = checkSendFrequency(params.phone, smsFrequencyCache);
+	if (!frequencyCheck.allowed) {
+		ctx.body = { code: 429, msg: frequencyCheck.message };
+		return false;
+	}
+	
+	// 验证码类型，默认为注册
+	const type = params.type || 'register';
+	
+	// 如果是注册类型，检查手机号是否已存在
+	if (type === 'register') {
+		const [err, existingUser] = await AsyncTo(UserModel.findOne({ phone: params.phone }));
+		if (err) {
+			ctx.body = { code: 500, msg: "服务器错误" };
+			console.log('查询用户失败:', err);
+			return false;
+		}
+		
+		if (existingUser) {
+			ctx.body = { code: 400, msg: "该手机号已注册" };
+			return false;
+		}
+	}
+	
+	try {
+		// 生成验证码
+		const code = generateVerifyCode();
+		
+		// 发送短信
+		const smsResult = await sendSms(params.phone, code, type);
+		
+		if (!smsResult.success) {
+			ctx.body = { code: 500, msg: "短信发送失败，请稍后重试" };
+			console.log('短信发送失败:', smsResult.error);
+			return false;
+		}
+		
+		// 删除该手机号之前未使用的验证码
+		await AsyncTo(SmsCodeModel.deleteMany({ 
+			phone: params.phone, 
+			type: type, 
+			used: false 
+		}));
+		
+		// 保存验证码到数据库
+		const [saveErr, savedCode] = await AsyncTo(SmsCodeModel.create({
+			phone: params.phone,
+			code: code,
+			type: type
+		}));
+		
+		if (saveErr) {
+			ctx.body = { code: 500, msg: "验证码保存失败" };
+			console.log('验证码保存失败:', saveErr);
+			return false;
+		}
+		
+		// 更新发送频率记录
+		smsFrequencyCache[params.phone] = Date.now();
+		
+		// 返回成功响应
+		ctx.body = { 
+			code: 200, 
+			msg: "验证码发送成功",
+			data: {
+				phone: params.phone,
+				type: type,
+				// 开发环境返回验证码便于测试，生产环境不返回
+				...(process.env.NODE_ENV === 'dev' && { code: code })
+			}
+		};
+		
+	} catch (error) {
+		console.log('发送验证码处理失败:', error);
+		ctx.body = { code: 500, msg: "验证码发送失败" };
+		return false;
+	}
+});
 
+// 验证短信验证码接口 - 对应前端 /api/user/verify-code
+Router.post(`${AppConfig.publicPath}/api/user/verify-code`, async ctx => {
+	const params = ctx.request.body;
+	
+	// 参数验证
+	if (!params.phone || !params.code) {
+		ctx.body = { code: 400, msg: "手机号和验证码不能为空" };
+		return false;
+	}
+	
+	const type = params.type || 'register';
+	
+	try {
+		// 查找有效的验证码
+		const [err, smsCode] = await AsyncTo(SmsCodeModel.findOne({
+			phone: params.phone,
+			code: params.code,
+			type: type,
+			used: false,
+			expiredAt: { $gt: new Date() } // 未过期
+		}));
+		
+		if (err) {
+			ctx.body = { code: 500, msg: "服务器错误" };
+			console.log('查询验证码失败:', err);
+			return false;
+		}
+		
+		if (!smsCode) {
+			ctx.body = { code: 400, msg: "验证码无效或已过期" };
+			return false;
+		}
+		
+		// 标记验证码为已使用
+		const [updateErr] = await AsyncTo(SmsCodeModel.findByIdAndUpdate(smsCode._id, { used: true }));
+		if (updateErr) {
+			console.log('更新验证码状态失败:', updateErr);
+		}
+		
+		// 返回成功响应
+		ctx.body = { 
+			code: 200, 
+			msg: "验证码验证成功",
+			data: {
+				phone: params.phone,
+				type: type,
+				verified: true
+			}
+		};
+		
+	} catch (error) {
+		console.log('验证码验证处理失败:', error);
+		ctx.body = { code: 500, msg: "验证码验证失败" };
+		return false;
+	}
+});
+
+// 测试短信发送接口 - 仅开发环境使用
+if (process.env.NODE_ENV === 'dev') {
+	Router.post(`${AppConfig.publicPath}/api/user/test-sms`, async ctx => {
+		const params = ctx.request.body;
+		
+		if (!params.phone) {
+			ctx.body = { code: 400, msg: "请提供测试手机号" };
+			return false;
+		}
+		
+		try {
+			// 生成测试验证码
+			const code = generateVerifyCode();
+			
+			// 发送短信
+			const smsResult = await sendSms(params.phone, code, 'register');
+			
+			if (smsResult.success) {
+				ctx.body = { 
+					code: 200, 
+					msg: "测试短信发送成功",
+					data: {
+						phone: params.phone,
+						code: code, // 开发环境返回验证码
+						provider: process.env.SMS_PROVIDER || 'mock'
+					}
+				};
+			} else {
+				ctx.body = { 
+					code: 500, 
+					msg: "测试短信发送失败",
+					error: smsResult.error 
+				};
+			}
+		} catch (error) {
+			console.log('测试短信发送失败:', error);
+			ctx.body = { code: 500, msg: "测试短信发送异常" };
+		}
+	});
+}
 
 export default Router;

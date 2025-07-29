@@ -1,5 +1,11 @@
 <template>
   <view class="login-container">
+    <!-- 返回按钮 -->
+    <view :style="{ height: `${searchHeight}rpx`, top: `${buttonTop}rpx`}" class="back-button" @click="goToHome">
+      <text class="back-icon">←</text>
+      <text class="back-text">返回首页</text>
+    </view>
+    
     <view class="login-header">
       <image class="logo" src="/static/logo.png" mode="aspectFit"></image>
       <text class="title">欢迎回来</text>
@@ -79,11 +85,15 @@ import { validateUsername, validatePassword, validatePhone, validateEmail } from
 import { wechatLogin as wechatLoginUtil } from '@/utils/wechat.js'
 import { supportWechatLogin, isWechatMiniProgram } from '@/utils/platform.js'
 import { handleAsyncWithLoading } from '@/utils/async.js'
+import { useMenuButton } from '@/utils/use-menu-button.js'
 
 // 响应式数据
 const loading = ref(false)
 const wechatLoading = ref(false)
 const showWechatLogin = ref(false)
+
+// 使用胶囊按钮适配
+const { buttonTop, searchHeight } = useMenuButton()
 
 const formData = reactive({
   username: '',
@@ -176,14 +186,14 @@ const handleLogin = async () => {
 // 跳转到注册页
 const goToRegister = () => {
   uni.navigateTo({
-    url: '/pages/register/register'
+    url: '/pages/auth/register'
   })
 }
 
 // 跳转到忘记密码页
 const goToForgotPassword = () => {
   uni.navigateTo({
-    url: '/pages/forgot-password/forgot-password'
+    url: '/pages/auth/forgot-password'
   })
 }
 
@@ -254,16 +264,52 @@ onMounted(() => {
 
 <style scoped>
 .login-container {
-  min-height: 100vh;
+  height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 60rpx 40rpx;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: top;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.back-button {
+  position: absolute;
+  top: 40rpx;
+  left: 40rpx;
+  display: flex;
+  align-items: center;
+  padding: 12rpx 24rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 30rpx;
+  backdrop-filter: blur(10rpx);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+  z-index: 10;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.back-button:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.back-icon {
+  font-size: 32rpx;
+  color: #fff;
+  margin-right: 8rpx;
+  font-weight: bold;
+}
+
+.back-text {
+  font-size: 26rpx;
+  color: #fff;
 }
 
 .login-header {
   text-align: center;
+  margin-top: 100rpx;
   margin-bottom: 80rpx;
 }
 

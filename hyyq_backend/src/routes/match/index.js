@@ -54,7 +54,6 @@ Router.post(`${AppConfig.publicPath}/api/matches`, async ctx => {
 	const [err, newMatch] = await AsyncTo(MatchModel.create(matchData));
 	if (err) {
 		ctx.body = { code: 500, msg: "发布约球失败" };
-		console.log('创建约球失败:', err);
 		return false;
 	}
 	
@@ -88,7 +87,6 @@ Router.get(`${AppConfig.publicPath}/api/matches`, async ctx => {
 	
 	if (err) {
 		ctx.body = { code: 500, msg: "查询约球列表失败" };
-		console.log('查询约球失败:', err);
 		return false;
 	}
 	
@@ -131,7 +129,6 @@ Router.get(`${AppConfig.publicPath}/api/matches/my`, async ctx => {
 	
 	if (err) {
 		ctx.body = { code: 500, msg: "查询我的约球失败" };
-		console.log('查询我的约球失败:', err);
 		return false;
 	}
 	
@@ -183,7 +180,6 @@ Router.put(`${AppConfig.publicPath}/api/matches/:id`, async ctx => {
 	
 	if (err) {
 		ctx.body = { code: 500, msg: "修改约球失败" };
-		console.log('修改约球失败:', err);
 		return false;
 	}
 	
@@ -224,7 +220,6 @@ Router.delete(`${AppConfig.publicPath}/api/matches/:id`, async ctx => {
 	
 	if (err) {
 		ctx.body = { code: 500, msg: "删除约球失败" };
-		console.log('删除约球失败:', err);
 		return false;
 	}
 	
@@ -273,7 +268,6 @@ Router.put(`${AppConfig.publicPath}/api/matches/:id/status`, async ctx => {
 	
 	if (err) {
 		ctx.body = { code: 500, msg: "更新约球状态失败" };
-		console.log('更新约球状态失败:', err);
 		return false;
 	}
 	
@@ -349,7 +343,6 @@ Router.post(`${AppConfig.publicPath}/api/matches/:id/join`, async ctx => {
 	
 	if (err) {
 		ctx.body = { code: 500, msg: "参加约球失败" };
-		console.log('参加约球失败:', err);
 		return false;
 	}
 	
@@ -400,7 +393,6 @@ Router.post(`${AppConfig.publicPath}/api/matches/:id/leave`, async ctx => {
 	
 	if (err) {
 		ctx.body = { code: 500, msg: "退出约球失败" };
-		console.log('退出约球失败:', err);
 		return false;
 	}
 	
