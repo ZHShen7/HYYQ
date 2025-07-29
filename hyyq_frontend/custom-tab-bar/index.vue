@@ -35,7 +35,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, computed } from 'vue'
+import { useAuth } from '@/utils/auth.js'
 import PublishModal from '@/pages/publish/index.vue'
 
 // Props 定义
@@ -46,123 +47,95 @@ const props = defineProps({
   }
 })
 
+// 使用认证钩子
+const { isLoggedIn } = useAuth()
+
 // 响应式数据
-const currentSelected = ref(null)
 const publishModalRef = ref(null)
 
-// 常量数据 - 使用 reactive 包装对象数据
-const tabConfig = reactive({
-  color: '#7A7E83',
-  selectedColor: '#3cc51f',
-  list: [
-    {
-      pagePath: '/pages/home/index',
-      iconPath: '/static/tabbar/home.png',
-      selectedIconPath: '/static/tabbar/home-active.png',
-      text: '首页'
-    },
-    {
-      pagePath: '/pages/orders/orders',
-      iconPath: '/static/tabbar/order.png',
-      selectedIconPath: '/static/tabbar/order-active.png',
-      text: '约球'
-    },
-    {
-      pagePath: '/pages/club/club',
-      iconPath: '/static/tabbar/club.png',
-      selectedIconPath: '/static/tabbar/club-active.png',
-      text: '俱乐部'
-    },
-    {
-      pagePath: '/pages/profile/profile',
-      iconPath: '/static/tabbar/profile.png',
-      selectedIconPath: '/static/tabbar/profile-active.png',
-      text: '我的'
-    }
-  ]
-})
-
-// 计算属性
+// 计算属性 - 直接使用props
 const activeIndex = computed(() => {
-  // 优先使用currentSelected，如果为null则使用props中的selected
-  return currentSelected.value !== null ? currentSelected.value : props.selected
+  console.log('当前activeIndex:', props.selected)
+  return props.selected
 })
 
-// Tab路由映射常量
-const TAB_ROUTES = {
-  'pages/home/index': 0,
-  'pages/orders/orders': 1,
-  'pages/club/club': 2,
-  'pages/profile/profile': 3
+// 需要登录的页面索引
+const LOGIN_REQUIRED_TABS = [1, 2] // 约球(1)、俱乐部(2)
+
+// 检查登录状态
+const checkLogin = () => {
+  const token = uni.getStorageSync('token')
+  return !!token
 }
 
-// 方法定义
-const updateCurrentTab = () => {
-  const pages = getCurrentPages()
-  if (pages.length > 0) {
-    const currentPage = pages[pages.length - 1]
-    const route = currentPage.route
+// 跳转到登录页
+const goToLogin = () => {
+  uni.navigateTo({
+    url: '/pages/auth/login'
+  })
+}
 
-    const tabIndex = TAB_ROUTES[route]
-    if (tabIndex !== undefined) {
-      currentSelected.value = tabIndex
+// 切换Tab方法
+const switchTab = (index, url) => {
+  console.log('点击tab:', index, '当前高亮:', activeIndex.value)
+  
+  // 检查是否需要登录的页面
+  if (LOGIN_REQUIRED_TABS.includes(index)) {
+    if (!checkLogin()) {
+      uni.showModal({
+        title: '提示',
+        content: '请先登录后再使用此功能',
+        confirmText: '去登录',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            goToLogin()
+          }
+        }
+      })
+      return
     }
   }
-}
 
-const switchTab = (index, url) => {
-  if (activeIndex.value === index) {
-    return // 如果已经在当前页面，不进行跳转
-  }
-
-  // 立即更新选中状态
-  currentSelected.value = index
-
+  // 执行页面跳转
   uni.switchTab({
     url: url,
     success: () => {
-      // 跳转成功后再次确保状态正确
-      updateCurrentTab()
+      console.log('跳转成功:', url)
     },
     fail: (err) => {
       console.error('页面跳转失败:', err)
-      // 跳转失败时恢复原状态
-      updateCurrentTab()
+      uni.showToast({
+        title: '页面跳转失败',
+        icon: 'none'
+      })
     }
   })
 }
 
+// 处理发布按钮点击
 const handlePublish = () => {
   // 检查登录状态
-  const token = uni.getStorageSync('token')
-  if (!token) {
-    uni.showToast({
-      title: '请先登录',
-      icon: 'none'
+  if (!checkLogin()) {
+    uni.showModal({
+      title: '提示',
+      content: '请先登录后再发布内容',
+      confirmText: '去登录',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          goToLogin()
+        }
+      }
     })
     return
   }
+  
   // 显示发布选项弹窗
   if (publishModalRef.value) {
     publishModalRef.value.showPublishModal()
   }
 }
-
-// 监听器
-watch(
-  () => props.selected,
-  (newVal) => {
-    if (currentSelected.value === null || currentSelected.value === 0) {
-      currentSelected.value = newVal
-    }
-  },
-  { immediate: true }
-)
-
-// 生命周期钩子
-onMounted(() => {
-  updateCurrentTab()
-})
 </script>
 
 <style lang="scss" scoped>

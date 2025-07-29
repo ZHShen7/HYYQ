@@ -264,14 +264,15 @@ onMounted(() => {
 
 <style scoped>
 .login-container {
-  height: 100vh;
+  min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 60rpx 40rpx;
   display: flex;
   flex-direction: column;
-  justify-content: top;
+  justify-content: flex-start;
   position: relative;
   box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .back-button {
@@ -378,6 +379,8 @@ onMounted(() => {
 .login-footer {
   text-align: center;
   margin-top: 60rpx;
+  margin-bottom: 40rpx;
+  padding-bottom: 20rpx;
   font-size: 24rpx;
   color: rgba(255, 255, 255, 0.7);
 }
