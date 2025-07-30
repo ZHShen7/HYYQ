@@ -12,11 +12,19 @@ export default {
 		enum: ['足球', '篮球', '羽毛球', '网球', '乒乓球', '排球', '其他'],
 		msg: "运动类型必须是：足球、篮球、羽毛球、网球、乒乓球、排球、其他"
 	},
-	matchTime: {
+	startTime: {
 		required: true,
 		type: String,
 		trim: true,
-		msg: "约球时间不能为空"
+		msg: "约球开始时间不能为空"
+	},
+	duration: {
+		required: true,
+		type: Number,
+		min: 0.5,
+		max: 24,
+		default: 2,
+		msg: "活动持续时间必须在0.5-24小时之间"
 	},
 	location: {
 		required: true,

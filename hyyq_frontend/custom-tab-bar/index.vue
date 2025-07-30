@@ -1,12 +1,12 @@
 <template>
   <view class="custom-tabbar">
-    <view class="tab-item" :class="{ active: activeIndex === 0 }" @click="switchTab(0, '/pages/home/index')">
-      <image :src="activeIndex === 0 ? '/static/tabbar/home-active.png' : '/static/tabbar/home.png'" class="tab-icon" />
+    <view class="tab-item" :class="{ active: props.activeIndex === 0 }" @click="switchTab(0)">
+      <image :src="props.activeIndex === 0 ? '/static/tabbar/home-active.png' : '/static/tabbar/home.png'" class="tab-icon" />
       <text class="tab-text">首页</text>
     </view>
 
-    <view class="tab-item" :class="{ active: activeIndex === 1 }" @click="switchTab(1, '/pages/orders/orders')">
-      <image :src="activeIndex === 1 ? '/static/tabbar/order-active.png' : '/static/tabbar/order.png'"
+    <view class="tab-item" :class="{ active: props.activeIndex === 1 }" @click="switchTab(1)">
+      <image :src="props.activeIndex === 1 ? '/static/tabbar/order-active.png' : '/static/tabbar/order.png'"
         class="tab-icon" />
       <text class="tab-text">约球</text>
     </view>
@@ -19,122 +19,43 @@
       <text class="publish-text">发布</text>
     </view>
 
-    <view class="tab-item" :class="{ active: activeIndex === 2 }" @click="switchTab(2, '/pages/club/club')">
-      <image :src="activeIndex === 2 ? '/static/tabbar/club-active.png' : '/static/tabbar/club.png'" class="tab-icon" />
+    <view class="tab-item" :class="{ active: props.activeIndex === 2 }" @click="switchTab(2)">
+      <image :src="props.activeIndex === 2 ? '/static/tabbar/club-active.png' : '/static/tabbar/club.png'" class="tab-icon" />
       <text class="tab-text">俱乐部</text>
     </view>
 
-    <view class="tab-item" :class="{ active: activeIndex === 3 }" @click="switchTab(3, '/pages/profile/profile')">
-      <image :src="activeIndex === 3 ? '/static/tabbar/profile-active.png' : '/static/tabbar/profile.png'"
+    <view class="tab-item" :class="{ active: props.activeIndex === 3 }" @click="switchTab(3)">
+      <image :src="props.activeIndex === 3 ? '/static/tabbar/profile-active.png' : '/static/tabbar/profile.png'"
         class="tab-icon" />
       <text class="tab-text">我的</text>
     </view>
-    
-    <PublishModal ref="publishModalRef" />
   </view>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useAuth } from '@/utils/auth.js'
-import PublishModal from '@/pages/publish/index.vue'
-
-// Props 定义
+// Props
 const props = defineProps({
-  selected: {
+  activeIndex: {
     type: Number,
     default: 0
   }
 })
 
-// 使用认证钩子
-const { isLoggedIn } = useAuth()
-
-// 响应式数据
-const publishModalRef = ref(null)
-
-// 计算属性 - 直接使用props
-const activeIndex = computed(() => {
-  console.log('当前activeIndex:', props.selected)
-  return props.selected
-})
-
-// 需要登录的页面索引
-const LOGIN_REQUIRED_TABS = [1, 2] // 约球(1)、俱乐部(2)
-
-// 检查登录状态
-const checkLogin = () => {
-  const token = uni.getStorageSync('token')
-  return !!token
-}
-
-// 跳转到登录页
-const goToLogin = () => {
-  uni.navigateTo({
-    url: '/pages/auth/login'
-  })
-}
+// Emits
+const emit = defineEmits(['tab-change', 'publish-click'])
 
 // 切换Tab方法
-const switchTab = (index, url) => {
-  console.log('点击tab:', index, '当前高亮:', activeIndex.value)
+const switchTab = (index) => {
+  console.log('点击tab:', index, '当前高亮:', props.activeIndex)
   
-  // 检查是否需要登录的页面
-  if (LOGIN_REQUIRED_TABS.includes(index)) {
-    if (!checkLogin()) {
-      uni.showModal({
-        title: '提示',
-        content: '请先登录后再使用此功能',
-        confirmText: '去登录',
-        cancelText: '取消',
-        success: (res) => {
-          if (res.confirm) {
-            goToLogin()
-          }
-        }
-      })
-      return
-    }
-  }
-
-  // 执行页面跳转
-  uni.switchTab({
-    url: url,
-    success: () => {
-      console.log('跳转成功:', url)
-    },
-    fail: (err) => {
-      console.error('页面跳转失败:', err)
-      uni.showToast({
-        title: '页面跳转失败',
-        icon: 'none'
-      })
-    }
-  })
+  // 通过事件通知父组件切换tab
+  emit('tab-change', index)
 }
 
 // 处理发布按钮点击
 const handlePublish = () => {
-  // 检查登录状态
-  if (!checkLogin()) {
-    uni.showModal({
-      title: '提示',
-      content: '请先登录后再发布内容',
-      confirmText: '去登录',
-      cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          goToLogin()
-        }
-      }
-    })
-    return
-  }
-  
-  // 显示发布选项弹窗
-  if (publishModalRef.value) {
-    publishModalRef.value.showPublishModal()
-  }
+  // 通过事件通知父组件处理发布
+  emit('publish-click')
 }
 </script>
 

@@ -175,9 +175,6 @@
         </view>
       </view>
     </view>
-    
-    <!-- 自定义tabBar -->
-    <CustomTabBar :selected="1" />
   </view>
 </template>
 
@@ -422,64 +419,6 @@ const toggleJoin = async (match) => {
   }
 }
 
-// 模拟数据
-const mockAllMatches = [
-  {
-    id: 1,
-    userName: '锁G',
-    userAvatar: '/static/logo.png',
-    sport: '篮球',
-    content: '周末想找人打篮球，有没有一起的？场地我已经订好了，就在市体育馆。',
-    matchTime: '2024年1月15日 周六 14:00',
-    location: '市体育馆篮球场',
-    needPeople: 4,
-    currentPeople: 2,
-    level: '进阶',
-    contact: 'wechat123',
-    images: ['/static/logo.png'],
-    publishTime: Date.now() - 3600000,
-    status: 'active',
-    isJoined: false
-  },
-  {
-    id: 2,
-    userName: 'Dabby',
-    userAvatar: '/static/logo.png',
-    sport: '羽毛球',
-    content: '明天下午打羽毛球，还差几个人，欢迎新手老手都来！',
-    matchTime: '2024年1月14日 周日 16:00',
-    location: '大学城羽毛球场',
-    needPeople: 4,
-    currentPeople: 2,
-    level: '不限',
-    contact: '13800138000',
-    images: [],
-    publishTime: Date.now() - 7200000,
-    status: 'active',
-    isJoined: true
-  }
-]
-
-const mockMyMatches = [
-  {
-    id: 3,
-    userName: '我',
-    userAvatar: '/static/logo.png',
-    sport: '羽毛球',
-    content: '晚上打羽毛球，双打，技术不限，重在参与！',
-    matchTime: '2024年1月16日 周一 19:00',
-    location: '社区活动中心',
-    needPeople: 4,
-    currentPeople: 3,
-    level: '入门',
-    contact: 'my_wechat',
-    images: [],
-    publishTime: Date.now() - 1800000,
-    status: 'active',
-    isJoined: false
-  }
-]
-
 // 监听登录状态变化
 watch(isLoggedIn, (newVal) => {
   if (newVal) {
@@ -497,9 +436,8 @@ onMounted(() => {
 
 <style scoped>
 .match-container {
-  min-height: 100vh;
+  min-height: calc(100vh - 120rpx);
   background-color: #f5f5f5;
-  padding-bottom: 160rpx;
   box-sizing: border-box;
 }
 
@@ -571,6 +509,7 @@ onMounted(() => {
 .sport-filter {
   white-space: nowrap;
   background-color: white;
+  width: calc(100% - 40rpx);
   border-radius: 20rpx;
   padding: 20rpx;
 }

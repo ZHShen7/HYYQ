@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自定义样式 */
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .ant-btn-primary {
+    @apply bg-blue-500 border-blue-500 hover:bg-blue-600 hover:border-blue-600;
+  }
+  
+  .ant-table-thead > tr > th {
+    @apply bg-gray-50;
+  }
+}
+
+/* Ant Design 样式重置 */
+.ant-layout {
+  background: #f5f5f5;
+}
+
+.ant-layout-content {
+  background: #f5f5f5;
+}
+
+.ant-card {
+  @apply shadow-sm;
+}
+
+.ant-form-item-label > label {
+  @apply text-gray-700 font-medium;
+}

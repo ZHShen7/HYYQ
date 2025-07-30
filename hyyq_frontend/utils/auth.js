@@ -52,8 +52,8 @@ export const goToLogin = () => {
 
 // 跳转到首页
 export const goToHome = () => {
-  uni.switchTab({
-    url: '/pages/home/index'
+  uni.reLaunch({
+    url: '/pages/mainLayout'
   })
 }
 

@@ -31,14 +31,26 @@
         </view>
       </view>
 
-      <!-- 约球时间 -->
+      <!-- 约球开始时间 -->
       <view class="form-section">
-        <text class="section-title">约球时间</text>
+        <text class="section-title">开始时间</text>
         <picker mode="multiSelector" :range="dateTimeRange" :value="dateTimeValue" @change="onDateTimeChange"
           @columnchange="onDateTimeColumnChange">
           <view class="time-input">
             <text class="time-icon">🕐</text>
-            <text class="time-text">{{ matchTime || '选择约球时间' }}</text>
+            <text class="time-text">{{ startTime || '选择开始时间' }}</text>
+            <text class="time-arrow">></text>
+          </view>
+        </picker>
+      </view>
+
+      <!-- 活动持续时间 -->
+      <view class="form-section">
+        <text class="section-title">持续时间</text>
+        <picker mode="selector" :range="durationOptions" :value="durationIndex" @change="onDurationChange">
+          <view class="time-input">
+            <text class="time-icon">⏱️</text>
+            <text class="time-text">{{ selectedDuration || '选择持续时间' }}</text>
             <text class="time-arrow">></text>
           </view>
         </picker>
@@ -119,7 +131,8 @@ const { isLoggedIn } = useAuth()
 // 响应式数据
 const content = ref('')
 const selectedSport = ref('')
-const matchTime = ref('')
+const startTime = ref('')
+const duration = ref(2) // 默认2小时
 const location = ref('')
 const needPeople = ref('')
 const selectedLevel = ref('')
@@ -130,13 +143,18 @@ const images = ref([])
 const dateTimeValue = ref([0, 0, 0])
 const dateTimeRange = ref([[], [], []])
 
+// 持续时间选择器相关数据
+const durationIndex = ref(3) // 默认选择2小时（索引3）
+const durationOptions = ref(['0.5小时', '1小时', '1.5小时', '2小时', '2.5小时', '3小时', '4小时', '5小时', '6小时', '8小时'])
+const selectedDuration = ref('2小时')
+
 // 选项数据
 const sports = ['足球', '篮球', '羽毛球', '网球', '乒乓球', '排球', '其他']
 const levels = ['新手', '入门', '进阶', '高手', '不限']
 
 // 计算属性
 const canPublish = computed(() => {
-  return content.value.trim().length > 0 && selectedSport.value && matchTime.value && location.value
+  return content.value.trim().length > 0 && selectedSport.value && startTime.value && location.value
 })
 
 // 平台检测
@@ -203,31 +221,52 @@ const initDateTimeData = () => {
   dateTimeValue.value = [0, nextHour, 0]
 
   // 设置默认显示时间
-  updateMatchTimeDisplay()
+  updateStartTimeDisplay()
 }
 
 // 日期时间选择变化事件
 const onDateTimeChange = (e) => {
   dateTimeValue.value = e.detail.value
-  updateMatchTimeDisplay()
+  updateStartTimeDisplay()
 }
 
 // 日期时间列变化事件
 const onDateTimeColumnChange = (e) => {
   dateTimeValue.value[e.detail.column] = e.detail.value
-  updateMatchTimeDisplay()
+  updateStartTimeDisplay()
 }
 
-// 更新显示的约球时间
-const updateMatchTimeDisplay = () => {
+// 更新显示的约球开始时间
+const updateStartTimeDisplay = () => {
   const [dateIndex, hourIndex, minuteIndex] = dateTimeValue.value
   const dateStr = dateTimeRange.value[0][dateIndex]
   const hourStr = dateTimeRange.value[1][hourIndex]
   const minuteStr = dateTimeRange.value[2][minuteIndex]
 
   if (dateStr && hourStr && minuteStr) {
-    matchTime.value = `${dateStr} ${hourStr}${minuteStr}`
+    startTime.value = `${dateStr} ${hourStr}${minuteStr}`
   }
+}
+
+// 持续时间选择变化事件
+const onDurationChange = (e) => {
+  durationIndex.value = e.detail.value
+  selectedDuration.value = durationOptions.value[e.detail.value]
+  
+  // 更新duration数值
+  const durationMap = {
+    '0.5小时': 0.5,
+    '1小时': 1,
+    '1.5小时': 1.5,
+    '2小时': 2,
+    '2.5小时': 2.5,
+    '3小时': 3,
+    '4小时': 4,
+    '5小时': 5,
+    '6小时': 6,
+    '8小时': 8
+  }
+  duration.value = durationMap[selectedDuration.value] || 2
 }
 
 // 手动输入位置
@@ -313,7 +352,8 @@ const handlePublish = async () => {
     const publishData = {
       content: content.value.trim(),
       sport: selectedSport.value,
-      matchTime: matchTime.value,
+      startTime: startTime.value,
+      duration: duration.value,
       location: location.value,
       needPeople: parseInt(needPeople.value),
       level: selectedLevel.value,
@@ -334,15 +374,18 @@ const handlePublish = async () => {
       // 清空表单
       content.value = ''
       selectedSport.value = ''
-      matchTime.value = ''
+      startTime.value = ''
+      duration.value = 2
       location.value = ''
       needPeople.value = ''
       selectedLevel.value = ''
       contact.value = ''
       images.value = []
 
-      // 重置日期时间选择器
+      // 重置选择器
       initDateTimeData()
+      durationIndex.value = 3
+      selectedDuration.value = '2小时'
 
       // 返回约球页面
       setTimeout(() => {
@@ -366,6 +409,9 @@ const handlePublish = async () => {
 onMounted(() => {
   console.log('发布约球页面加载')
   initDateTimeData()
+  // 初始化持续时间显示
+  selectedDuration.value = '2小时'
+  duration.value = 2
 })
 </script>
 

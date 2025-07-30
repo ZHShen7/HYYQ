@@ -21,9 +21,6 @@
         </view>
       </view>
     </view>
-    
-    <!-- 自定义tabBar -->
-    <CustomTabBar :selected="2" />
   </view>
 </template>
 
