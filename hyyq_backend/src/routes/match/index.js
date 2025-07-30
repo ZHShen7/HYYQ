@@ -28,8 +28,14 @@ Router.post(`${AppConfig.publicPath}/api/matches`, async ctx => {
 	}
 	
 	// 参数验证
-	if (!params.content || !params.sport || !params.matchTime || !params.location || !params.needPeople) {
-		ctx.body = { code: 400, msg: "约球内容、运动类型、时间、地点和人数不能为空" };
+	if (!params.content || !params.sport || !params.startTime || !params.location || !params.needPeople) {
+		ctx.body = { code: 400, msg: "约球内容、运动类型、开始时间、地点和人数不能为空" };
+		return false;
+	}
+	
+	// 验证持续时间
+	if (params.duration && (params.duration < 0.5 || params.duration > 24)) {
+		ctx.body = { code: 400, msg: "活动持续时间必须在0.5-24小时之间" };
 		return false;
 	}
 	

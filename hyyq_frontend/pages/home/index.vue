@@ -96,10 +96,6 @@
         </view>
       </view>
     </view>
-    
-    
-    <!-- 自定义tabBar -->
-    <CustomTabBar :selected="0" />
   </view>
 </template>
 
@@ -199,10 +195,9 @@ onShow(() => {
 
 <style scoped>
 .index-container {
-  min-height: 100vh;
+  min-height: calc(100vh - 120rpx);
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   padding: 40rpx;
-  padding-bottom: 160rpx; /* 为自定义tabBar留出空间 */
   box-sizing: border-box;
 }
 

@@ -120,9 +120,6 @@
         </view>
       </view>
     </view>
-    
-    <!-- 自定义tabBar -->
-    <CustomTabBar :selected="3" />
   </view>
 </template>
 

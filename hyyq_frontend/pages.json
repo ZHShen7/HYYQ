@@ -1,6 +1,15 @@
 {
 	"pages": [
 		{
+			"path": "pages/mainLayout",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "",
+				"enablePullDownRefresh": false,
+				"disableScroll": false
+			}
+		},
+		{
 			"path": "pages/home/index",
 			"style": {
 				"navigationBarTitleText": "首页"
@@ -85,39 +94,6 @@
 			}
 		}
 	],
-	"tabBar": {
-		"custom": true,
-		"color": "#7A7E83",
-		"selectedColor": "#3cc51f",
-		"borderStyle": "black",
-		"backgroundColor": "#ffffff",
-		"list": [
-			{
-				"pagePath": "pages/home/index",
-				"iconPath": "static/tabbar/home.png",
-				"selectedIconPath": "static/tabbar/home-active.png",
-				"text": "首页"
-			},
-			{
-				"pagePath": "pages/orders/orders",
-				"iconPath": "static/tabbar/order.png",
-				"selectedIconPath": "static/tabbar/order-active.png",
-				"text": "约球"
-			},
-			{
-				"pagePath": "pages/club/club",
-				"iconPath": "static/tabbar/club.png",
-				"selectedIconPath": "static/tabbar/club-active.png",
-				"text": "俱乐部"
-			},
-			{
-				"pagePath": "pages/profile/profile",
-				"iconPath": "static/tabbar/profile.png",
-				"selectedIconPath": "static/tabbar/profile-active.png",
-				"text": "我的"
-			}
-		]
-	},
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "约约球球",
