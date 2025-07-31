@@ -5,6 +5,7 @@
       <input
         v-if="type !== 'textarea'"
         :type="inputType"
+        :password="isPasswordType"
         :placeholder="placeholder"
         :value="modelValue"
         :maxlength="maxlength"
@@ -85,8 +86,9 @@ const emit = defineEmits(['update:modelValue', 'focus', 'blur'])
 
 // 计算属性
 const inputType = computed(() => {
+  // 在微信小程序中，密码输入框使用password属性而不是type
   if (props.type === 'password') {
-    return 'password'
+    return 'text'  // 微信小程序中密码输入框的type应该是text
   }
   if (props.type === 'number') {
     return 'number'
@@ -95,6 +97,11 @@ const inputType = computed(() => {
     return 'text'
   }
   return 'text'
+})
+
+// 判断是否为密码类型
+const isPasswordType = computed(() => {
+  return props.type === 'password'
 })
 
 const hasError = computed(() => {
@@ -109,12 +116,10 @@ const handleInput = (e) => {
 }
 
 const handleFocus = (e) => {
-  console.log('focus')
   emit('focus', e)
 }
 
 const handleBlur = (e) => {
-  console.log('blur')
   emit('blur', e)
 }
 </script>

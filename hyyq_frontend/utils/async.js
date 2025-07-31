@@ -34,10 +34,45 @@ export const handleAsync = async (promise, options = {}) => {
   const [data, error] = await to(promise)
 
   if (error) {
+    // 根据错误类型提供更具体的错误信息
+    let displayErrorMsg = errorMsg
+    
+    if (error.statusCode) {
+      // HTTP错误
+      switch (error.statusCode) {
+        case 400:
+          displayErrorMsg = error.data?.message || '请求参数错误'
+          break
+        case 401:
+          displayErrorMsg = '登录已过期，请重新登录'
+          break
+        case 403:
+          displayErrorMsg = '权限不足'
+          break
+        case 404:
+          displayErrorMsg = '请求的资源不存在'
+          break
+        case 500:
+          displayErrorMsg = error.data?.message || '服务器内部错误'
+          break
+        case 502:
+        case 503:
+        case 504:
+          displayErrorMsg = '服务器暂时不可用，请稍后重试'
+          break
+        default:
+          displayErrorMsg = error.data?.message || `请求失败 (${error.statusCode})`
+      }
+    } else if (error.message) {
+      // 网络错误或其他错误
+      displayErrorMsg = error.message
+    }
+
     if (showToast) {
       uni.showToast({
-        title: errorMsg,
-        icon: 'none'
+        title: displayErrorMsg,
+        icon: 'none',
+        duration: 3000
       })
     }
     if (onError) {
@@ -174,4 +209,54 @@ export const withTimeout = (promise, timeout = 10000, timeoutMsg = '请求超时
   })
 
   return to(Promise.race([promise, timeoutPromise]))
-} 
+}
+
+/* 
+=================
+使用示例和最佳实践
+=================
+
+// ❌ 错误用法 - 没有检查error
+const [data, error] = await handleAsync(api.login(params))
+// 如果接口返回500，error存在但代码继续执行，可能导致问题
+
+// ✅ 正确用法1 - 使用回调处理
+const [data, error] = await handleAsync(api.login(params), {
+  onSuccess: (data) => {
+    // 只有成功时才执行
+    setToken(data.token)
+    navigateToHome()
+  },
+  onError: (error) => {
+    // 处理错误
+    console.error('登录失败:', error)
+  }
+})
+
+// ✅ 正确用法2 - 检查error后继续
+const [data, error] = await handleAsync(api.login(params))
+if (error) {
+  console.error('登录失败，终止后续操作')
+  return // 重要：有错误时提前返回
+}
+// 只有没有错误时才继续执行
+setToken(data.token)
+navigateToHome()
+
+// ✅ 正确用法3 - 使用Boolean版本
+const success = await handleAsyncBoolean(api.login(params))
+if (!success) {
+  console.error('登录失败')
+  return
+}
+// 只有成功时才继续执行
+
+// ✅ 使用loading版本
+const [data, error] = await handleAsyncWithLoading(api.login(params), {
+  loading: { loading },
+  onSuccess: (data) => {
+    // 成功处理
+  }
+})
+// 注意：这里仍然应该检查error或使用onSuccess回调
+*/ 
