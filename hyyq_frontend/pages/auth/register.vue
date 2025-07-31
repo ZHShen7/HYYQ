@@ -175,7 +175,6 @@ const sendVerifyCode = async () => {
     title: '验证码功能开发中',
     icon: 'none'
   })
-  // console.log('我出发了')
   // const [data, error] = await handleAsyncWithLoading(
   //   sendVerifyCodeApi({ phone: formData.phone }),
   //   {

@@ -13,51 +13,36 @@
         </button>
       </view>
     </view>
-    
+
     <!-- 内容区域 -->
     <view class="content-area">
       <!-- 活动标题 -->
       <view class="form-section">
         <text class="section-title">活动标题</text>
-        <input 
-          class="title-input" 
-          v-model="title"
-          placeholder="请输入活动标题"
-          maxlength="50"
-        />
+        <input class="title-input" v-model="title" placeholder="请输入活动标题" maxlength="50" />
         <text class="char-count">{{ title.length }}/50</text>
       </view>
-      
+
       <!-- 活动描述 -->
       <view class="form-section">
         <text class="section-title">活动描述</text>
-        <textarea 
-          class="content-input" 
-          v-model="content"
-          placeholder="详细描述活动内容、规则和要求..."
-          maxlength="1000"
-          auto-height
-        ></textarea>
+        <textarea class="content-input" v-model="content" placeholder="详细描述活动内容、规则和要求..." maxlength="1000"
+          auto-height></textarea>
         <text class="char-count">{{ content.length }}/1000</text>
       </view>
-      
+
       <!-- 活动类型 -->
       <view class="form-section">
         <text class="section-title">活动类型</text>
         <view class="activity-selector">
-          <view 
-            class="activity-item" 
-            :class="{ active: selectedActivity === activity }"
-            v-for="activity in activities"
-            :key="activity"
-            @click="selectActivity(activity)"
-          >
+          <view class="activity-item" :class="{ active: selectedActivity === activity }" v-for="activity in activities"
+            :key="activity" @click="selectActivity(activity)">
             <text class="activity-icon">{{ getActivityIcon(activity) }}</text>
             <text class="activity-text">{{ activity }}</text>
           </view>
         </view>
       </view>
-      
+
       <!-- 活动时间 -->
       <view class="form-section">
         <text class="section-title">活动时间</text>
@@ -72,7 +57,7 @@
           </view>
         </view>
       </view>
-      
+
       <!-- 活动地点 -->
       <view class="form-section">
         <text class="section-title">活动地点</text>
@@ -82,50 +67,35 @@
           <text class="location-arrow">></text>
         </view>
       </view>
-      
+
       <!-- 参与人数 -->
       <view class="form-section">
         <text class="section-title">参与人数</text>
         <view class="people-range">
           <view class="people-input">
             <text class="people-label">最少：</text>
-            <input 
-              class="people-number" 
-              v-model="minPeople" 
-              type="number" 
-              placeholder="1"
-            />
+            <input class="people-number" v-model="minPeople" type="number" placeholder="1" />
             <text class="people-unit">人</text>
           </view>
           <view class="people-input">
             <text class="people-label">最多：</text>
-            <input 
-              class="people-number" 
-              v-model="maxPeople" 
-              type="number" 
-              placeholder="不限"
-            />
+            <input class="people-number" v-model="maxPeople" type="number" placeholder="不限" />
             <text class="people-unit">人</text>
           </view>
         </view>
       </view>
-      
+
       <!-- 报名费用 -->
       <view class="form-section">
         <text class="section-title">报名费用</text>
         <view class="fee-input">
           <text class="fee-label">费用：</text>
-          <input 
-            class="fee-number" 
-            v-model="fee" 
-            type="number" 
-            placeholder="0"
-          />
+          <input class="fee-number" v-model="fee" type="number" placeholder="0" />
           <text class="fee-unit">元</text>
           <text class="fee-note">（0表示免费）</text>
         </view>
       </view>
-      
+
       <!-- 报名截止时间 -->
       <view class="form-section">
         <text class="section-title">报名截止时间</text>
@@ -135,34 +105,22 @@
           <text class="deadline-arrow">></text>
         </view>
       </view>
-      
+
       <!-- 联系方式 -->
       <view class="form-section">
         <text class="section-title">联系方式</text>
-        <input 
-          class="contact-input" 
-          v-model="contact"
-          placeholder="微信号或手机号"
-        />
+        <input class="contact-input" v-model="contact" placeholder="微信号或手机号" />
       </view>
-      
+
       <!-- 图片上传 -->
       <view class="form-section">
         <text class="section-title">活动图片</text>
         <view class="image-uploader">
-          <view 
-            class="upload-item" 
-            v-for="(image, index) in images" 
-            :key="index"
-          >
+          <view class="upload-item" v-for="(image, index) in images" :key="index">
             <image :src="image" mode="aspectFill" class="uploaded-image"></image>
             <view class="delete-btn" @click="deleteImage(index)">×</view>
           </view>
-          <view 
-            class="upload-btn" 
-            @click="chooseImage" 
-            v-if="images.length < 9"
-          >
+          <view class="upload-btn" @click="chooseImage" v-if="images.length < 9">
             <text class="upload-icon">+</text>
             <text class="upload-text">添加图片</text>
           </view>
@@ -197,12 +155,12 @@ const activities = ['足球比赛', '篮球比赛', '羽毛球比赛', '网球�
 
 // 计算属性
 const canPublish = computed(() => {
-  return title.value.trim().length > 0 && 
-         content.value.trim().length > 0 && 
-         selectedActivity.value && 
-         startTime.value && 
-         endTime.value && 
-         location.value
+  return title.value.trim().length > 0 &&
+    content.value.trim().length > 0 &&
+    selectedActivity.value &&
+    startTime.value &&
+    endTime.value &&
+    location.value
 })
 
 // 返回上一页
@@ -297,11 +255,11 @@ const handlePublish = () => {
     })
     return
   }
-  
+
   uni.showLoading({
     title: '发布中...'
   })
-  
+
   // 模拟发布过程
   setTimeout(() => {
     uni.hideLoading()
@@ -309,7 +267,7 @@ const handlePublish = () => {
       title: '发布成功',
       icon: 'success'
     })
-    
+
     // 清空表单
     title.value = ''
     content.value = ''
@@ -323,7 +281,7 @@ const handlePublish = () => {
     deadline.value = ''
     contact.value = ''
     images.value = []
-    
+
     // 返回首页
     setTimeout(() => {
       uni.switchTab({
@@ -333,9 +291,6 @@ const handlePublish = () => {
   }, 2000)
 }
 
-onMounted(() => {
-  console.log('发布活动页面加载')
-})
 </script>
 
 <style scoped>

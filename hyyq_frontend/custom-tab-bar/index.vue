@@ -46,8 +46,6 @@ const emit = defineEmits(['tab-change', 'publish-click'])
 
 // 切换Tab方法
 const switchTab = (index) => {
-  console.log('点击tab:', index, '当前高亮:', props.activeIndex)
-  
   // 通过事件通知父组件切换tab
   emit('tab-change', index)
 }

@@ -204,8 +204,6 @@ const checkWechatLoginSupport = () => {
 
 // 处理微信登录
 const handleWechatLogin = async () => {
-  console.log('=== 开始微信登录流程 ===')
-  
   const [wechatResult, wechatError] = await handleAsyncWithLoading(
     wechatLoginUtil(),
     {

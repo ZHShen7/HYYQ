@@ -169,7 +169,6 @@ const goBack = () => {
 
 // 选择运动类型
 const selectSport = (sport) => {
-  console.log('我出发了',sport)
   selectedSport.value = sport
 }
 
@@ -286,15 +285,11 @@ const inputLocation = () => {
 
 // 选择位置
 const chooseLocation = () => {
-  console.log('开始选择位置')
-
   uni.chooseLocation({
     success: (res) => {
-      console.log('选择位置成功:', res)
       location.value = res.name
     },
     fail: (err) => {
-      console.error('选择位置失败:', err)
       // 提供备用方案
       uni.showModal({
         title: '选择位置失败',
@@ -407,7 +402,6 @@ const handlePublish = async () => {
 }
 
 onMounted(() => {
-  console.log('发布约球页面加载')
   initDateTimeData()
   // 初始化持续时间显示
   selectedDuration.value = '2小时'

@@ -166,10 +166,8 @@ const handleCustomerService = () => {
     },
     corpId: '',
     success: () => {
-      console.log('打开客服会话成功')
     },
     fail: (err) => {
-      console.log('打开客服会话失败:', err)
       uni.showToast({
         title: '客服功能开发中',
         icon: 'none'
@@ -266,9 +264,6 @@ const handleLogout = () => {
   })
 }
 
-onMounted(() => {
-  console.log('个人中心页面加载，当前平台：', getPlatform())
-})
 </script>
 
 <style scoped lang="less">

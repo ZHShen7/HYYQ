@@ -171,9 +171,6 @@ const handlePublish = () => {
   }, 2000)
 }
 
-onMounted(() => {
-  console.log('发布动态页面加载')
-})
 </script>
 
 <style scoped>

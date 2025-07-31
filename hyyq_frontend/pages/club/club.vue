@@ -25,7 +25,6 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
 import { useAuth } from '@/utils/auth.js'
 
 const { isLoggedIn } = useAuth()
@@ -35,10 +34,6 @@ const goToLogin = () => {
     url: '/pages/auth/login'
   })
 }
-
-onMounted(() => {
-  console.log('俱乐部页面加载')
-})
 </script>
 
 <style scoped>

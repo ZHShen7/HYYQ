@@ -70,8 +70,6 @@ const goToLogin = () => {
 
 // 处理tab切换
 const handleTabChange = (index) => {
-  console.log('切换到tab:', index)
-  
   // 检查是否需要登录
   if (LOGIN_REQUIRED_TABS.includes(index)) {
     if (!checkLogin()) {

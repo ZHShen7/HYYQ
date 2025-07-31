@@ -176,7 +176,6 @@ const handleFeatureClick = (feature) => {
 
 // 处理头像加载错误
 const handleAvatarError = (e) => {
-  console.log('头像加载失败:', e)
 }
 
 // 生命周期
