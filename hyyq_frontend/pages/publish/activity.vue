@@ -333,9 +333,6 @@ const handlePublish = () => {
   }, 2000)
 }
 
-onMounted(() => {
-  console.log('发布活动页面加载')
-})
 </script>
 
 <style scoped>

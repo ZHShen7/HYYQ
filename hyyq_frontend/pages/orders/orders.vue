@@ -427,7 +427,6 @@ watch(isLoggedIn, (newVal) => {
 })
 
 onMounted(() => {
-  console.log('约球页面加载')
   if (isLoggedIn.value) {
     loadMatches()
   }

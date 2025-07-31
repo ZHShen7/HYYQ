@@ -221,9 +221,6 @@ const handleLogout = () => {
   })
 }
 
-onMounted(() => {
-  console.log('设置页面加载，当前平台：', getPlatform())
-})
 </script>
 
 <style scoped>

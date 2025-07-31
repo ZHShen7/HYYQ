@@ -91,9 +91,6 @@ defineExpose({
   showPublishModal
 })
 
-onMounted(() => {
-  console.log('发布弹窗组件加载')
-})
 </script>
 
 <style scoped>
