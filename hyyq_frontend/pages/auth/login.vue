@@ -174,7 +174,7 @@ const handleLogin = async () => {
         
         // 跳转到首页
         setTimeout(() => {
-          uni.reLaunch({
+          uni.navigateTo({
             url: '/pages/mainLayout'
           })
         }, 1500)
@@ -204,6 +204,8 @@ const checkWechatLoginSupport = () => {
 
 // 处理微信登录
 const handleWechatLogin = async () => {
+  console.log('=== 开始微信登录流程 ===')
+  
   const [wechatResult, wechatError] = await handleAsyncWithLoading(
     wechatLoginUtil(),
     {
@@ -211,7 +213,7 @@ const handleWechatLogin = async () => {
       loadingText: '微信登录中...',
       errorMsg: '微信登录失败，请重试',
       onError: (error) => {
-        console.log(error)
+        console.error('=== 微信登录第一步失败 ===', error)
         // 如果是权限问题，提示用户授权
         if (error.message && error.message.includes('授权')) {
           uni.showModal({
@@ -225,9 +227,11 @@ const handleWechatLogin = async () => {
   )
 
   if (wechatError) {
-    console.log(wechatError)
+    console.error('=== 微信登录获取凭证失败 ===', wechatError)
     return
   }
+
+  console.log('=== 微信登录第一步成功，获取到的数据 ===', wechatResult)
 
   const [response, loginError] = await handleAsyncWithLoading(
     wechatLogin({
@@ -241,6 +245,7 @@ const handleWechatLogin = async () => {
       successMsg: '微信登录成功',
       errorMsg: '微信登录失败，请重试',
       onSuccess: (data) => {
+        console.log('=== 微信登录完全成功 ===', data)
         // 保存token和用户信息
         setToken(data.token)
         setUserInfo(data.data) // 修复：使用data.data而不是data.userInfo
@@ -251,9 +256,16 @@ const handleWechatLogin = async () => {
             url: '/pages/mainLayout'
           })
         }, 1500)
+      },
+      onError: (error) => {
+        console.error('=== 后端微信登录API调用失败 ===', error)
       }
     }
   )
+  
+  if (loginError) {
+    console.error('=== 微信登录完整流程失败 ===', loginError)
+  }
 }
 
 // 生命周期

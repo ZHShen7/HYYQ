@@ -7,5 +7,5 @@ export default {
 		port: 27017,
 		username: "root"
 	},
-	publicPath: env.NODE_ENV === "dev" ? "" : "/hyyq"
+	publicPath: env.NODE_ENV === "dev" ? "" : ""
 };

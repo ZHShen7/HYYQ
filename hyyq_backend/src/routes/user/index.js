@@ -26,25 +26,25 @@ Router.post(`${AppConfig.publicPath}/api/user/register`, async ctx => {
 		return false;
 	}
 	
-	// 验证短信验证码
-	const [codeErr, smsCode] = await AsyncTo(SmsCodeModel.findOne({
-		phone: params.phone,
-		code: params.verifyCode,
-		type: 'register',
-		used: false,
-		expiredAt: { $gt: new Date() } // 未过期
-	}));
+	// // 验证短信验证码
+	// const [codeErr, smsCode] = await AsyncTo(SmsCodeModel.findOne({
+	// 	phone: params.phone,
+	// 	code: params.verifyCode,
+	// 	type: 'register',
+	// 	used: false,
+	// 	expiredAt: { $gt: new Date() } // 未过期
+	// }));
 	
-	if (codeErr) {
-		ctx.body = { code: 500, msg: "服务器错误" };
-		console.log('查询验证码失败:', codeErr);
-		return false;
-	}
+	// if (codeErr) {
+	// 	ctx.body = { code: 500, msg: "服务器错误" };
+	// 	console.log('查询验证码失败:', codeErr);
+	// 	return false;
+	// }
 	
-	if (!smsCode) {
-		ctx.body = { code: 400, msg: "验证码无效或已过期" };
-		return false;
-	}
+	// if (!smsCode) {
+	// 	ctx.body = { code: 400, msg: "验证码无效或已过期" };
+	// 	return false;
+	// }
 	
 	// 判断用户是否已存在
 	const [err1, existingUser] = await AsyncTo(UserModel.findOne({ username: params.username }));
@@ -74,7 +74,7 @@ Router.post(`${AppConfig.publicPath}/api/user/register`, async ctx => {
 	
 	try {
 		// 标记验证码为已使用
-		await AsyncTo(SmsCodeModel.findByIdAndUpdate(smsCode._id, { used: true }));
+		// await AsyncTo(SmsCodeModel.findByIdAndUpdate(smsCode._id, { used: true }));
 		
 		// 创建新用户
 		const [err3, newUser] = await AsyncTo(UserModel.create(params));
@@ -221,6 +221,8 @@ Router.get(`${AppConfig.publicPath}/api/user/info`, async ctx => {
 // 微信登录接口 - 对应前端 /api/user/wechat-login
 Router.post(`${AppConfig.publicPath}/api/user/wechat-login`, async ctx => {
 	const params = ctx.request.body;
+	console.log('=== 微信登录接口被调用 ===');
+	console.log('接收到的参数:', JSON.stringify(params, null, 2));
 	
 	// 参数验证
 	if (!params.code) {
@@ -230,27 +232,54 @@ Router.post(`${AppConfig.publicPath}/api/user/wechat-login`, async ctx => {
 	
 	try {
 		// 调用微信API获取用户openid和session_key
+		console.log('=== 开始调用微信API验证code ===');
+		console.log('微信code:', params.code);
+		
 		const wechatResult = await verifyWechatCode(params.code);
+		console.log('=== 微信API调用结果 ===');
+		console.log('wechatResult:', JSON.stringify(wechatResult, null, 2));
 		
 		if (!wechatResult.success) {
-			ctx.body = { code: 400, msg: "微信登录失败" };
+			console.error('微信API调用失败:', wechatResult.error);
+			ctx.body = { code: 400, msg: "微信登录失败: " + (wechatResult.error || '未知错误') };
 			return false;
 		}
 		
 		const { openid, unionid, session_key } = wechatResult.data;
+		console.log('=== 解析出的微信用户信息 ===');
+		console.log('openid:', openid);
+		console.log('unionid:', unionid);
+		console.log('session_key:', session_key ? '已获取' : '未获取');
 		
 		// 查找是否已有该微信用户
-		const [err1, existingUser] = await AsyncTo(UserModel.findOne({ 
+		console.log('=== 开始查询数据库中的微信用户 ===');
+		const query = { 
 			$or: [
 				{ wechatOpenId: openid },
 				{ wechatUnionId: unionid }
 			]
-		}));
+		};
+		console.log('查询条件:', JSON.stringify(query, null, 2));
+		
+		const [err1, existingUser] = await AsyncTo(UserModel.findOne(query));
 		
 		if (err1) {
+			console.error('查询微信用户失败:', err1);
 			ctx.body = { code: 500, msg: "服务器错误" };
-			console.log('查询微信用户失败:', err1);
 			return false;
+		}
+		
+		console.log('=== 数据库查询结果 ===');
+		if (existingUser) {
+			console.log('找到现有用户:', {
+				_id: existingUser._id,
+				username: existingUser.username,
+				wechatOpenId: existingUser.wechatOpenId,
+				wechatUnionId: existingUser.wechatUnionId,
+				wechatNickname: existingUser.wechatNickname
+			});
+		} else {
+			console.log('未找到现有用户，将创建新用户');
 		}
 		
 		let user;
@@ -258,6 +287,7 @@ Router.post(`${AppConfig.publicPath}/api/user/wechat-login`, async ctx => {
 		if (existingUser) {
 			// 用户已存在，直接登录
 			user = existingUser;
+			console.log('=== 使用现有用户登录 ===');
 			
 			// 更新微信信息（如果有新的信息）
 			if (params.userInfo) {
@@ -266,25 +296,38 @@ Router.post(`${AppConfig.publicPath}/api/user/wechat-login`, async ctx => {
 				if (params.userInfo.avatarUrl) updateData.wechatAvatar = params.userInfo.avatarUrl;
 				
 				if (Object.keys(updateData).length > 0) {
+					console.log('更新用户微信信息:', updateData);
 					await AsyncTo(UserModel.findByIdAndUpdate(user._id, updateData));
 				}
 			}
 		} else {
 			// 新用户，创建账号
+			console.log('=== 创建新微信用户 ===');
+			console.log('用户信息参数:', params.userInfo);
+			
 			const userData = generateWechatUserData(openid, params.userInfo);
+			console.log('生成的用户数据:', JSON.stringify(userData, null, 2));
 			
 			const [err2, newUser] = await AsyncTo(UserModel.create(userData));
 			if (err2) {
+				console.error('创建微信用户失败:', err2);
 				ctx.body = { code: 500, msg: "创建微信用户失败" };
-				console.log('创建微信用户失败:', err2);
 				return false;
 			}
 			
 			user = newUser;
+			console.log('新用户创建成功:', {
+				_id: user._id,
+				username: user.username,
+				wechatOpenId: user.wechatOpenId
+			});
 		}
 		
 		// 生成token
 		const token = `token_${user._id}_${Date.now()}`;
+		console.log('=== 生成登录token ===');
+		console.log('用户ID:', user._id);
+		console.log('token:', token);
 		
 		// 返回用户信息（不包含密码）
 		const userData = {
@@ -303,6 +346,9 @@ Router.post(`${AppConfig.publicPath}/api/user/wechat-login`, async ctx => {
 			loginType: user.loginType
 		};
 		
+		console.log('=== 微信登录成功 ===');
+		console.log('返回的用户数据:', JSON.stringify(userData, null, 2));
+		
 		ctx.body = { 
 			code: 200, 
 			data: userData, 
@@ -311,7 +357,7 @@ Router.post(`${AppConfig.publicPath}/api/user/wechat-login`, async ctx => {
 		};
 		
 	} catch (error) {
-		console.log('微信登录处理失败:', error);
+		console.error('微信登录处理失败:', error);
 		ctx.body = { code: 500, msg: "微信登录失败" };
 		return false;
 	}

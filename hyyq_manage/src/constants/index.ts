@@ -1,5 +1,5 @@
 // API 基础配置
-export const API_BASE_URL = 'http://localhost:3000/api';
+export const API_BASE_URL = 'http://116.62.127.61:3000/api';
 
 // 分页配置
 export const DEFAULT_PAGE_SIZE = 20;
