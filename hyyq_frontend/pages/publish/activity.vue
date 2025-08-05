@@ -255,6 +255,7 @@ const handlePublish = () => {
     })
     return
   }
+  
 
   uni.showLoading({
     title: '发布中...'

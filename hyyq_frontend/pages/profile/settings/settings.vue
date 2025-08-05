@@ -122,9 +122,8 @@ const phoneDisplay = computed(() => {
 const handleSettingClick = (type) => {
   switch (type) {
     case 'bindPhone':
-      uni.showToast({
-        title: '绑定手机功能开发中',
-        icon: 'none'
+      uni.navigateTo({
+        url: '/pages/profile/settings/bind-phone'
       })
       break
     case 'addressManage':

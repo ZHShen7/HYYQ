@@ -1,3 +1,5 @@
+import { UserModel } from "../models/index.js";
+
 /**
  * 异步格式化函数 - 用于优雅地处理Promise的异步操作
  * 将Promise的结果转换为统一的[error, data]格式，避免使用try-catch
@@ -85,9 +87,94 @@ function AsyncToWithTimeout(promise, timeout, timeoutMessage = '操作超时') {
     return AsyncTo(Promise.race([promise, timeoutPromise]));
 }
 
+/**
+ * 认证中间件 - 验证用户token并将用户信息添加到上下文中
+ * 
+ * @param {Object} ctx - Koa上下文对象
+ * @param {Function} next - 下一个中间件函数
+ * 
+ * @example
+ * // 在路由中使用
+ * Router.get('/protected', isAuth, async (ctx) => {
+ *   // ctx.user 包含当前用户信息
+ *   console.log('当前用户:', ctx.user);
+ * });
+ */
+async function isAuth(ctx, next) {
+    try {
+        // 从请求头获取token
+        const token = ctx.headers.authorization?.replace('Bearer ', '');
+        
+        if (!token) {
+            ctx.body = {
+                success: false,
+                message: "未授权访问，请先登录"
+            };
+            ctx.status = 401;
+            return;
+        }
+        
+        // 简单的token验证（基于项目现有的token格式：token_userId_timestamp）
+        const tokenParts = token.split('_');
+        if (tokenParts.length !== 3 || tokenParts[0] !== 'token') {
+            ctx.body = {
+                success: false,
+                message: "token格式无效"
+            };
+            ctx.status = 401;
+            return;
+        }
+        
+        const userId = tokenParts[1];
+        
+        // 查找用户
+        const [err, user] = await AsyncTo(UserModel.findById(userId));
+        if (err) {
+            console.error('查询用户失败:', err);
+            ctx.body = {
+                success: false,
+                message: "服务器错误"
+            };
+            ctx.status = 500;
+            return;
+        }
+        
+        if (!user) {
+            ctx.body = {
+                success: false,
+                message: "用户不存在或token已失效"
+            };
+            ctx.status = 401;
+            return;
+        }
+        
+        // 将用户信息添加到上下文中，供后续中间件使用
+        ctx.user = {
+            id: user._id.toString(),
+            username: user.username,
+            phone: user.phone,
+            name: user.name,
+            wechatOpenId: user.wechatOpenId,
+            loginType: user.loginType
+        };
+        
+        // 执行下一个中间件
+        await next();
+        
+    } catch (error) {
+        console.error('认证中间件错误:', error);
+        ctx.body = {
+            success: false,
+            message: "认证失败"
+        };
+        ctx.status = 500;
+    }
+}
+
 
 export {
     AsyncTo,
     SyncTo,
-    AsyncToWithTimeout
+    AsyncToWithTimeout,
+    isAuth
 };
