@@ -516,6 +516,142 @@ Router.post(`${AppConfig.publicPath}/api/user/verify-code`, async ctx => {
 	}
 });
 
+// 更新用户信息接口 - 对应前端 /api/user/update
+Router.put(`${AppConfig.publicPath}/api/user/update`, async ctx => {
+	// 从请求头获取token
+	const token = ctx.headers.authorization?.replace('Bearer ', '');
+	
+	if (!token) {
+		ctx.body = { code: 401, msg: "未授权访问" };
+		return false;
+	}
+	
+	// 简单的token验证
+	const tokenParts = token.split('_');
+	if (tokenParts.length !== 3) {
+		ctx.body = { code: 401, msg: "token无效" };
+		return false;
+	}
+	
+	const userId = tokenParts[1];
+	const params = ctx.request.body;
+	
+	try {
+		// 查找用户
+		const [err, user] = await AsyncTo(UserModel.findById(userId));
+		if (err) {
+			ctx.body = { code: 500, msg: "服务器错误" };
+			console.log('查询用户失败:', err);
+			return false;
+		}
+		
+		if (!user) {
+			ctx.body = { code: 404, msg: "用户不存在" };
+			return false;
+		}
+		
+		// 如果要更新手机号，需要验证
+		if (params.phone && params.phone !== user.phone) {
+			// 验证手机号格式
+			if (!validatePhone(params.phone)) {
+				ctx.body = { code: 400, msg: "手机号格式不正确" };
+				return false;
+			}
+			
+			// 检查新手机号是否已被其他用户使用
+			const [existErr, existingUser] = await AsyncTo(UserModel.findOne({ 
+				phone: params.phone, 
+				_id: { $ne: userId } 
+			}));
+			
+			if (existErr) {
+				ctx.body = { code: 500, msg: "服务器错误" };
+				console.log('查询手机号失败:', existErr);
+				return false;
+			}
+			
+			if (existingUser) {
+				ctx.body = { code: 400, msg: "该手机号已被其他用户绑定" };
+				return false;
+			}
+			
+			// 验证短信验证码
+			if (!params.verifyCode) {
+				ctx.body = { code: 400, msg: "修改手机号需要验证码" };
+				return false;
+			}
+			
+			const [codeErr, smsCode] = await AsyncTo(SmsCodeModel.findOne({
+				phone: params.phone,
+				code: params.verifyCode,
+				type: 'bind_phone',
+				used: false,
+				expiredAt: { $gt: new Date() }
+			}));
+			
+			if (codeErr) {
+				ctx.body = { code: 500, msg: "服务器错误" };
+				console.log('查询验证码失败:', codeErr);
+				return false;
+			}
+			
+			if (!smsCode) {
+				ctx.body = { code: 400, msg: "验证码无效或已过期" };
+				return false;
+			}
+			
+			// 标记验证码为已使用
+			await AsyncTo(SmsCodeModel.findByIdAndUpdate(smsCode._id, { used: true }));
+		}
+		
+		// 准备更新的数据
+		const updateData = {};
+		const allowedFields = ['phone', 'name', 'height', 'weight', 'age', 'sex', 'location'];
+		
+		allowedFields.forEach(field => {
+			if (params[field] !== undefined) {
+				updateData[field] = params[field];
+			}
+		});
+		
+		// 更新用户信息
+		const [updateErr, updatedUser] = await AsyncTo(
+			UserModel.findByIdAndUpdate(userId, updateData, { new: true })
+		);
+		
+		if (updateErr) {
+			ctx.body = { code: 500, msg: "更新失败" };
+			console.log('更新用户失败:', updateErr);
+			return false;
+		}
+		
+		// 返回更新后的用户信息（不包含密码）
+		const userData = {
+			_id: updatedUser._id,
+			username: updatedUser.username,
+			name: updatedUser.name,
+			phone: updatedUser.phone,
+			type: updatedUser.type,
+			height: updatedUser.height,
+			weight: updatedUser.weight,
+			age: updatedUser.age,
+			sex: updatedUser.sex,
+			location: updatedUser.location
+		};
+		
+		ctx.body = { 
+			code: 200, 
+			data: userData, 
+			msg: "更新成功" 
+		};
+		
+	} catch (error) {
+		console.log('更新用户信息处理失败:', error);
+		ctx.body = { code: 500, msg: "更新失败" };
+		return false;
+	}
+});
+
 // 测试短信发送接口 - 仅开发环境使用
 if (process.env.NODE_ENV === 'dev') {
 	Router.post(`${AppConfig.publicPath}/api/user/test-sms`, async ctx => {

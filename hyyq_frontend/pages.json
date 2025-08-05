@@ -43,6 +43,13 @@
 			}
 		},
 		{
+			"path": "pages/profile/settings/bind-phone",
+			"style": {
+				"navigationBarTitleText": "绑定手机号",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/publish/index",
 			"style": {
 				"navigationBarTitleText": "发布"
